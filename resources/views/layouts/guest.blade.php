@@ -10,7 +10,7 @@
     <div class="min-h-screen flex flex-col items-center pt-6 sm:pt-0">
         <div>
             {{-- Optional: your own logo here --}}
-            <img src="{{ asset('images/funkit_logo.png') }}" class="w-24" alt="FunkIT" />
+            <img src="{{ asset('images/funkit-logo.png') }}" class="w-24" alt="FunkIT" />
         </div>
 
         <div class="w-full sm:max-w-md mt-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg">
