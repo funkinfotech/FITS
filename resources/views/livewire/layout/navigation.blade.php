@@ -24,7 +24,7 @@ new class extends Component
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}" wire:navigate>
-                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
+                        <img src="images/funkit-logo.png" class="w-10" alt="FunkIT"/>
                     </a>
                 </div>
 
@@ -44,7 +44,7 @@ new class extends Component
                             <div x-data="{{ json_encode(['name' => auth()->user()->name]) }}" x-text="name" x-on:profile-updated.window="name = $event.detail.name"></div>
 
                             <div class="ms-1">
-                                <img src="images/funkit_logo.png" />
+                                <img class="h-6 w-6 rounded-full object-cover" src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=052a44&color=fff" alt="{{ auth()->user()->name }}">
                             </div>
                         </button>
                     </x-slot>

@@ -11,6 +11,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
 });
 
+Route::get('/access-denied', function () {
+    return view('errors.access-denied');
+})->name('access-denied');
+
 //Route::view('/', 'welcome');
 Route::get('/', function () {
     $taglines = [
