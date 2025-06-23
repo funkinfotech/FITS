@@ -28,8 +28,12 @@
             @endif
 
             <!-- Page Content -->
-            <main>
-                @yield('content')
+            <main class="pt-12">
+                @hasSection('content')
+                    @yield('content')
+                @else
+                    {{ $slot ?? '' }}
+                @endif
             </main>
         </div>
     </body>

@@ -24,7 +24,7 @@ new class extends Component
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}" wire:navigate>
-                        <img src="images/funkit-logo.png" class="w-10" alt="FunkIT"/>
+                        <img src="{{ asset('images/funkit-logo.png') }}" alt="FunkIT" class="h-10">
                     </a>
                 </div>
 

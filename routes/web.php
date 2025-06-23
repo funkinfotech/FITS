@@ -47,6 +47,8 @@ Route::get('/dashboard', function () {
     return view('dashboard', compact('tickets'));
 })->middleware(['auth'])->name('dashboard');
 
+Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
+
 Route::view('profile', 'profile')
     ->middleware(['auth'])
     ->name('profile');

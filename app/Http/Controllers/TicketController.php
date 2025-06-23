@@ -13,19 +13,29 @@ class TicketController extends Controller
         return view('tickets.create');
     }
 
+    public function show(Ticket $ticket)
+    {
+        if ($ticket->user_id !== auth()->id()) {
+            abort(403, 'Unauthorized');
+        }
+
+        return view('tickets.show', compact('ticket'));
+    }
+
     public function store(Request $request)
     {
         $request->validate([
             'ticket_number' => 'required|unique:tickets,ticket_number',
             'subject' => 'required|string|max:255',
             'message' => 'required|string',
+            'priority' => 'required|in:Low,Medium,High',
         ]);
 
         Ticket::create([
             'ticket_number' => $request->ticket_number,
             'name' => auth()->user()->name,
             'email' => auth()->user()->email,
-            'priority' => 'medium',
+            'priority' => $request->priority,
             'status' => 'open',
             'subject' => $request->subject,
             'message' => $request->message,
