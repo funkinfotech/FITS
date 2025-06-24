@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Ticket;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class TicketController extends Controller
 {
@@ -35,8 +36,8 @@ class TicketController extends Controller
             'ticket_number' => $request->ticket_number,
             'name' => auth()->user()->name,
             'email' => auth()->user()->email,
-            'priority' => $request->priority,
-            'status' => 'open',
+            'priority' => Str::title($request->priority),
+            'status' => TicketStatus::Open->value,
             'subject' => $request->subject,
             'message' => $request->message,
             'user_id' => Auth::id(),

@@ -16,8 +16,8 @@ return new class extends Migration
             $table->string('ticket_number', 8)->unique();
             $table->string('name');
             $table->string('email');
-            $table->enum('priority', ['low', 'medium', 'high'])->default('medium');
-            $table->enum('status', ['open', 'in_progress', 'closed'])->default('open');
+            $table->enum('priority', ['Low', 'Medium', 'High'])->default('Medium');
+            $table->enum('status', ['Open', 'In Progress', 'Closed'])->default('Open');
             $table->string('subject');
             $table->longText('message');
             $table->timestamps();

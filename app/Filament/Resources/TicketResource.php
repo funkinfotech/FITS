@@ -9,6 +9,8 @@ use App\Filament\Resources\TicketResource\Pages\CreateTicket;
 use App\Filament\Resources\TicketResource\Pages\EditTicket;
 use App\Filament\Resources\TicketResource\Pages\ViewTicket;
 use App\Models\Ticket;
+use App\Enums\TicketStatus;
+use App\Enums\TicketPriority;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Components\TextInput;
@@ -43,30 +45,28 @@ class TicketResource extends Resource
 
             TextInput::make('name')->required(),
             TextInput::make('email')->email()->required(),
-
             Select::make('priority')
                 ->required()
-                ->options([
-                    'low' => 'Low',
-                    'medium' => 'Medium',
-                    'high' => 'High',
-                ])
+                ->options(
+                    collect(TicketPriority::cases())->mapWithKeys(fn ($case) => [
+                        $case->value => $case->value,
+                    ])
+                )
+                ->default(TicketPriority::Medium->value)
                 ->native(false)
-                ->default('medium')
-                ->disablePlaceholderSelection() //  prevent unselected state
-                ->required(), // ✅ Prevents empty value (disables the X)
+                ->disablePlaceholderSelection(),
 
             Select::make('status')
                 ->required()
-                ->options([
-                    'open' => 'Open',
-                    'in_progress' => 'In Progress',
-                    'closed' => 'Closed',
-                ])
+                ->options(
+                    collect(TicketStatus::cases())->mapWithKeys(fn ($case) => [
+                        $case->value => $case->value,
+                    ])
+                )
+                ->default(TicketStatus::Open->value)
                 ->native(false)
-                ->default('open')
-                ->disablePlaceholderSelection() //  prevent unselected state
-                ->required(), // ✅ Prevents empty value (disables the X)
+                ->disablePlaceholderSelection(),
+             
 
             TextInput::make('subject')->required(),
             Textarea::make('message')->required()->rows(6),
@@ -84,19 +84,23 @@ class TicketResource extends Resource
                 TextColumn::make('name')->searchable(),
                 TextColumn::make('email')->searchable(),
                 BadgeColumn::make('priority')
-                    ->default('medium')
+                    ->label('Priority')
+                    ->default('Medium')
                     ->colors([
-                        'low' => 'gray',
-                        'medium' => 'warning',
-                        'high' => 'danger',
-                    ]),
+                        'Low' => 'info',
+                        'Medium' => 'warning',
+                        'High' => 'danger',
+                    ])
+                    ->formatStateUsing(fn ($state) => ucfirst($state)),
                 BadgeColumn::make('status')
-                    ->default('open')
+                    ->label('Status')
+                    ->default('Open')
                     ->colors([
-                        'open' => 'primary',
-                        'in_progress' => 'warning',
-                        'closed' => 'success',
-                    ]),
+                        'Open' => 'primary',
+                        'In Progress' => 'warning',
+                        'Closed' => 'success',
+                    ])
+                    ->formatStateUsing(fn ($state) => $state instanceof \App\Enums\TicketStatus ? $state->value : ucwords($state)),          
                 TextColumn::make('subject')->limit(30),
                 TextColumn::make('created_at')->since(),
             ])

@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\TicketStatus;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Ticket extends Model
 {
@@ -28,8 +30,35 @@ class Ticket extends Model
         'ticket_number',
         'user_id',
     ];
+
+    protected $casts = [
+        'status' => TicketStatus::class,
+    ];
+
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    protected function priority(): Attribute
+    {
+        return Attribute::make(
+            set: fn ($value) => ucfirst(strtolower($value)),
+        );
+    }
+
+    protected function status(): Attribute
+    {
+        return Attribute::make(
+        set: function ($value) {
+            logger()->debug("Setting STATUS: " . $value); // <-- Add this
+            return ucwords(strtolower($value));
+        }
+    );
+
+//        return Attribute::make(
+//            set: fn ($value) => ucfirst(strtolower($value)),
+//        );
+    }
+
 }
-
-namespace App\Models;
-
-use Illuminate\Database\Eloquent\Model;

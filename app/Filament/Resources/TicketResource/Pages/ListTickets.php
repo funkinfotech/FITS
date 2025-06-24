@@ -43,17 +43,17 @@ class ListTickets extends ListRecords
 
             Badge::make('priority')
                 ->colors([
-                    'low' => 'gray',
-                    'medium' => 'warning',
-                    'high' => 'danger',
+                    'Low' => 'gray',
+                    'Medium' => 'warning',
+                    'High' => 'danger',
                 ])
                 ->label('Priority'),
 
             Badge::make('status')
                 ->colors([
-                    'open' => 'info',
-                    'in_progress' => 'warning',
-                    'closed' => 'success',
+                    'Open' => 'info',
+                    'In Progress' => 'warning',
+                    'Closed' => 'success',
                 ])
                 ->label('Status'),
         ];
