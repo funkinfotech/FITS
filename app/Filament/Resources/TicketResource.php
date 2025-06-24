@@ -47,10 +47,8 @@ class TicketResource extends Resource
             TextInput::make('email')->email()->required(),
             Select::make('priority')
                 ->required()
-                ->options(
-                    collect(TicketPriority::cases())->mapWithKeys(fn ($case) => [
-                        $case->value => $case->value,
-                    ])
+                ->options(collect(TicketStatus::cases())
+                    ->mapWithKeys(fn ($case) => [$case->value => $case->value])
                 )
                 ->default(TicketPriority::Medium->value)
                 ->native(false)
@@ -58,10 +56,8 @@ class TicketResource extends Resource
 
             Select::make('status')
                 ->required()
-                ->options(
-                    collect(TicketStatus::cases())->mapWithKeys(fn ($case) => [
-                        $case->value => $case->value,
-                    ])
+                ->options(collect(TicketStatus::cases())
+                    ->mapWithKeys(fn ($case) => [$case->value => $case->value])
                 )
                 ->default(TicketStatus::Open->value)
                 ->native(false)
@@ -91,7 +87,7 @@ class TicketResource extends Resource
                         'Medium' => 'warning',
                         'High' => 'danger',
                     ])
-                    ->formatStateUsing(fn ($state) => ucfirst($state)),
+                    ->formatStateUsing(fn ($state) => ucfirst($state->value)),
                 BadgeColumn::make('status')
                     ->label('Status')
                     ->default('Open')

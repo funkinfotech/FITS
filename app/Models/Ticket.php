@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\TicketStatus;
+use App\Enums\TicketPriority;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 
@@ -33,6 +34,7 @@ class Ticket extends Model
 
     protected $casts = [
         'status' => TicketStatus::class,
+        'priority' => TicketPriority::class,
     ];
 
     public function comments()

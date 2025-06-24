@@ -29,14 +29,14 @@ class TicketController extends Controller
             'ticket_number' => 'required|unique:tickets,ticket_number',
             'subject' => 'required|string|max:255',
             'message' => 'required|string',
-            'priority' => 'required|in:Low,Medium,High',
+            'priority' => ['required', Rule::in(array_column(TicketPriority::cases(), 'value'))],
         ]);
 
         Ticket::create([
             'ticket_number' => $request->ticket_number,
             'name' => auth()->user()->name,
             'email' => auth()->user()->email,
-            'priority' => Str::title($request->priority),
+            'priority' => TicketPriority::from($request->priority)->value,
             'status' => TicketStatus::Open->value,
             'subject' => $request->subject,
             'message' => $request->message,
