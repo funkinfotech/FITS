@@ -12,7 +12,7 @@ enum TicketPriority: string
     {
         return match ($this) {
             self::Low => '🧊',
-            self::Medium => '🟡',
+            self::Medium => '💧',
             self::High => '🔥',
         };
     }
@@ -20,9 +20,9 @@ enum TicketPriority: string
     public function colorClass(): string
     {
         return match ($this) {
-            self::Low => 'bg-blue-100 text-blue-800',
-            self::Medium => 'bg-amber-100 text-amber-700',
-            self::High => 'bg-rose-100 text-rose-700',
+            self::Low => 'text-black !important',
+            self::Medium => 'text-black !important',
+            self::High => 'bg-funk-orange text-white !important',
         };
     }
 

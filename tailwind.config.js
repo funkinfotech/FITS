@@ -10,12 +10,39 @@ export default {
         './vendor/filament/**/*.blade.php',
     ],
 
+        safelist: [
+        'bg-blue-500', 'text-white',
+        'bg-yellow-500', 'text-black',
+        'bg-green-500',
+        'bg-gray-300',
+        'bg-funk-blue',
+        'bg-funk-lt-blue',
+        'bg-funk-md-blue',
+        'bg-funk-orange',
+        'bg-funk-yellow',
+        'bg-funk-red',
+        'bg-funk-green',
+        'bg-funk-md-green',
+        'bg-funk-lt-green',
+    ],
+
     theme: {
         extend: {
             fontFamily: {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
             },
             colors: {
+
+                'funk-blue': '#052a44',
+                'funk-lt-blue': '#4f7fa2',
+                'funk-md-blue': '#3173a2',
+                'funk-orange': '#b5532f',
+                'funk-yellow': '#b5922f',
+                'funk-red': '#6a1e01',
+                'funk-green': '#014928',
+                'funk-md-green': '#2ba46d',
+                'funk-lt-green': '#4ba47c',
+
                 primary: {
                     DEFAULT: '#052A44',
                     50: '#e6eef2',

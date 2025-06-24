@@ -20,9 +20,9 @@ enum TicketStatus: string
     public function colorClass(): string
     {
         return match ($this) {
-            self::Open => 'bg-blue-100 text-blue-800',
-            self::InProgress => 'bg-amber-100 text-amber-700',
-            self::Closed => 'bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-200',
+            self::Open => 'bg-funk-lt-blue text-white !important',
+            self::InProgress => 'bg-funk-lt-green text-black !important',
+            self::Closed => 'bg-gray-300 text-black !important',
         };
     }
 
