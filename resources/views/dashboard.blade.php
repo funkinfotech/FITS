@@ -20,8 +20,8 @@
             
             @foreach ($tickets as $ticket)
                 @php
-                    $priority = strtolower(trim($ticket->priority));
-                    $status = strtolower(trim($ticket->status));
+                    $priority = strtolower(trim($ticket->priority->value));
+                    $status = strtolower(trim($ticket->status->value));
 
                     $statusClass = match ($status) {
                         'Open' => 'bg-green-100 text-green-800',
@@ -68,13 +68,13 @@
                             <div class="flex flex-col items-end gap-1">
                                 {{-- Status Badge --}}
                                 <span class="inline-flex justify-between items-center gap-2 px-3 py-0.5 rounded-full text-xs font-semibold {{ $statusClass }}">
-                                    {{ ucfirst($ticket->status) }}
+                                    {{ ucfirst($ticket->status->value) }}
                                     <span>{{ $statusEmoji }}</span>
                                 </span>
 
                                 {{-- Priority Badge --}}
                                 <span class="inline-flex justify-between items-center gap-2 px-3 py-0.5 rounded-full text-xs font-semibold {{ $priorityClass }}">
-                                    {{ ucfirst($ticket->priority) }}
+                                    {{ ucfirst($ticket->priority->value) }}
                                     <span>{{ $priorityEmoji }}</span>
                                 </span>
                             </div>

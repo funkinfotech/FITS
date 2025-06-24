@@ -27,7 +27,7 @@
                 @if($ticket->status === 'Open') bg-green-100 text-green-800
                 @elseif($ticket->status === 'In Progress') bg-yellow-100 text-yellow-800
                 @else bg-gray-200 text-gray-800 @endif">
-                {{ $statusEmoji }} {{ ucfirst($ticket->status) }}
+                {{ $statusEmoji }} {{ ucfirst($ticket->status->value) }}
             </span>
         </div>
 
@@ -37,7 +37,7 @@
                 @if($ticket->priority === 'High') bg-red-100 text-red-800
                 @elseif($ticket->priority === 'Medium') bg-yellow-100 text-yellow-800
                 @else bg-blue-100 text-blue-800 @endif">
-                {{ $priorityEmoji }} {{ ucfirst($ticket->priority) }}
+                {{ $priorityEmoji }} {{ ucfirst($ticket->priority->value) }}
             </span>
         </div>
 

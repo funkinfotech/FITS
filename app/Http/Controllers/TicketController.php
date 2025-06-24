@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ticket;
+use App\Enums\TicketPriority;
+use App\Enums\TicketStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class TicketController extends Controller
 {

@@ -87,7 +87,7 @@ class TicketResource extends Resource
                         'Medium' => 'warning',
                         'High' => 'danger',
                     ])
-                    ->formatStateUsing(fn ($state) => ucfirst($state->value)),
+                    ->formatStateUsing(fn ($state) => is_string($state) ? ucfirst($state) : ucfirst($state->value)),
                 BadgeColumn::make('status')
                     ->label('Status')
                     ->default('Open')
@@ -96,7 +96,7 @@ class TicketResource extends Resource
                         'In Progress' => 'warning',
                         'Closed' => 'success',
                     ])
-                    ->formatStateUsing(fn ($state) => $state instanceof \App\Enums\TicketStatus ? $state->value : ucwords($state)),          
+                    ->formatStateUsing(fn ($state) => is_string($state) ? ucfirst($state) : $state->value),         
                 TextColumn::make('subject')->limit(30),
                 TextColumn::make('created_at')->since(),
             ])
