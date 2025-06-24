@@ -1,19 +1,8 @@
 @extends('layouts.app')
 
 @php
-    $priorityEmoji = match($ticket->priority) {
-        'High' => '🔥',
-        'Medium' => '🟠',
-        'Low' => '🧊',
-        default => '❓',
-    };
-
-    $statusEmoji = match($ticket->status) {
-        'Open' => '📬',
-        'In Progress' => '⏳',
-        'Closed' => '✅',
-        default => '📬',
-    };
+    $priorityEmoji = $ticket->priority->emoji();
+    $statusEmoji = $ticket->status->emoji();
 @endphp
 
 @section('content')
@@ -23,24 +12,17 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <div>
             <p class="text-sm text-gray-600">Status</p>
-            <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold
-                @if($ticket->status === 'Open') bg-green-100 text-green-800
-                @elseif($ticket->status === 'In Progress') bg-yellow-100 text-yellow-800
-                @else bg-gray-200 text-gray-800 @endif">
-                {{ $statusEmoji }} {{ ucfirst($ticket->status->value) }}
+            <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold {{ $ticket->status->colorClass() }}">
+                {{ $statusEmoji }} {{ $ticket->status->value }}
             </span>
         </div>
 
         <div>
             <p class="text-sm text-gray-600">Priority</p>
-            <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold
-                @if($ticket->priority === 'High') bg-red-100 text-red-800
-                @elseif($ticket->priority === 'Medium') bg-yellow-100 text-yellow-800
-                @else bg-blue-100 text-blue-800 @endif">
-                {{ $priorityEmoji }} {{ ucfirst($ticket->priority->value) }}
+            <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold {{ $ticket->priority->colorClass() }}">
+                {{ $priorityEmoji }} {{ $ticket->priority->value }}
             </span>
         </div>
-
         <div>
             <p class="text-sm text-gray-600">Created At</p>
             <p class="text-gray-800">{{ $ticket->created_at->format('F j, Y g:i A') }}</p>
