@@ -11,7 +11,7 @@ enum TicketStatus: string
     public function emoji(): string
     {
         return match ($this) {
-            self::Open => '📥',
+            self::Open => '🆕',
             self::InProgress => '⏳',
             self::Closed => '💤',
         };
@@ -20,9 +20,9 @@ enum TicketStatus: string
     public function colorClass(): string
     {
         return match ($this) {
-            self::Open => 'bg-funk-lt-blue text-white !important',
-            self::InProgress => 'bg-funk-lt-green text-black !important',
-            self::Closed => 'bg-gray-300 text-black !important',
+            self::Open => 'badge badge-status-open',
+            self::InProgress => 'badge badge-status-inprogress',
+            self::Closed => 'badge badge-status-closed',
         };
     }
 

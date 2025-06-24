@@ -33,23 +33,22 @@
                         ? $ticket->priority
                         : TicketPriority::tryFrom($ticket->priority) ?? TicketPriority::Medium;
                 @endphp
-                <a href="{{ route('tickets.show', $ticket) }}" class="block hover:bg-gray-50 transition rounded-lg">
+                <a href="{{ route('tickets.show', $ticket) }}" class="block hover:bg-gray-50 transition rounded-md">
                     <div class="p-4 border-b">
                         <div class="flex justify-between items-center">
                             <div>
                                 <h2 class="text-lg font-semibold text-gray-900">
-                                    {{ $priority->emoji() }}
-                                     Ticket 🎫 #{{ $ticket->ticket_number }} — {{ $ticket->subject }}
+                                     🎫 Ticket #{{ $ticket->ticket_number }} — {{ $ticket->subject }}
                                 </h2>
                                 <p class="text-sm text-gray-600">{{ $ticket->created_at->format('F j, Y g:i A') }}</p>
                             </div>
                             <div class="flex flex-col items-end gap-1">
 
-                                <span class="inline-block rounded px-2 py-1 text-xs font-semibold {{ $status->colorClass() }}">
-                                    {{ $status->value }} {{ $status->emoji() }}
+                                <span class="inline-block rounded-md px-2 py-1 text-xs font-semibold {{ $status->colorClass() }}">
+                                    {{ $status->value }} 
                                 </span>
 
-                                <span class="inline-flex justify-between items-center gap-2 px-3 py-0.5 rounded-full text-xs font-semibold {{ $priority->colorClass() }}">
+                                <span class="inline-flex justify-between items-center gap-2 px-3 py-0.5 rounded-md text-xs font-semibold {{ $priority->colorClass() }}">
                                     {{ $priority->value }}
                                 </span>
                             </div>

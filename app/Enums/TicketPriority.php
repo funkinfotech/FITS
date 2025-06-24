@@ -20,9 +20,9 @@ enum TicketPriority: string
     public function colorClass(): string
     {
         return match ($this) {
-            self::Low => 'text-black !important',
-            self::Medium => 'text-black !important',
-            self::High => 'bg-funk-orange text-white !important',
+            self::Low => 'badge badge-priority-low',
+            self::Medium => 'badge badge-priority-medium',
+            self::High => 'badge badge-priority-high',
         };
     }
 
