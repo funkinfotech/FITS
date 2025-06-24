@@ -38,7 +38,7 @@
                         <div class="flex justify-between items-center">
                             <div>
                                 <h2 class="text-lg font-semibold text-gray-900">
-                                     🎫 Ticket #{{ $ticket->ticket_number }} — {{ $ticket->subject }}
+                                    {{ $priority->value === 'High' ? '🔥' : '🎫' }} Ticket #{{ $ticket->ticket_number }} — {{ $ticket->subject }}
                                 </h2>
                                 <p class="text-sm text-gray-600">{{ $ticket->created_at->format('F j, Y g:i A') }}</p>
                             </div>

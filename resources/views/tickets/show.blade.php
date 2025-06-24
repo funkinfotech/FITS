@@ -1,14 +1,23 @@
 @extends('layouts.app')
 
 @php
+
+    use App\Enums\TicketPriority;
+    use App\Enums\TicketStatus;
+
+    $priority = $ticket->priority instanceof TicketPriority
+        ? $ticket->priority
+        : TicketPriority::tryFrom($ticket->priority) ?? TicketPriority::Medium;
+
     $priorityEmoji = $ticket->priority->emoji();
     $statusEmoji = $ticket->status->emoji();
 @endphp
 
 @section('content')
-<div class="max-w-3xl mx-auto pt-12 py-10 px-6 bg-white shadow-md rounded-lg">
-    <h1 class="text-2xl font-bold mb-6 text-gray-900">🎫 Ticket #{{ $ticket->ticket_number }}</h1>
 
+<div class="max-w-3xl mx-auto pt-12 py-10 px-6 bg-white shadow-md rounded-lg">
+    <h1 class="text-2xl font-bold mb-6 text-gray-900">
+        {{ $priority->value === 'High' ? '🔥' : '🎫' }} Ticket #{{ $ticket->ticket_number }} — {{ $ticket->subject }}</h1>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <div>
             <p class="text-sm text-gray-600">Status</p>
