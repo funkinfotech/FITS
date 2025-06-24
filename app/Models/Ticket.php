@@ -41,26 +41,4 @@ class Ticket extends Model
     {
         return $this->hasMany(Comment::class);
     }
-
-    protected function priority(): Attribute
-    {
-        return Attribute::make(
-            set: fn ($value) => ucfirst(strtolower($value)),
-        );
-    }
-
-    protected function status(): Attribute
-    {
-        return Attribute::make(
-        set: function ($value) {
-            logger()->debug("Setting STATUS: " . $value); // <-- Add this
-            return ucwords(strtolower($value));
-        }
-    );
-
-//        return Attribute::make(
-//            set: fn ($value) => ucfirst(strtolower($value)),
-//        );
-    }
-
 }

@@ -35,10 +35,11 @@
                                 <p class="text-sm text-gray-600">{{ $ticket->created_at->format('F j, Y g:i A') }}</p>
                             </div>
                             <div class="flex flex-col items-end gap-1">
-                                <span class="inline-flex items-center gap-2 px-3 py-0.5 rounded-full text-xs font-semibold {{ $statusClass }}">
+                                <span class="inline-flex justify-between items-center gap-2 px-3 py-0.5 rounded-full text-xs font-semibold {{ $statusClass }}">
                                     {{ $statusEmoji }} {{ $ticket->status->value }}
                                 </span>
-                                <span class="inline-flex items-center gap-2 px-3 py-0.5 rounded-full text-xs font-semibold {{ $priorityClass }}">
+
+                                <span class="inline-flex justify-between items-center gap-2 px-3 py-0.5 rounded-full text-xs font-semibold {{ $priorityClass }}">
                                     {{ $priorityEmoji }} {{ $ticket->priority->value }}
                                 </span>
                             </div>

@@ -79,24 +79,18 @@ class TicketResource extends Resource
                 ->searchable(),
                 TextColumn::make('name')->searchable(),
                 TextColumn::make('email')->searchable(),
+                
                 BadgeColumn::make('priority')
                     ->label('Priority')
-                    ->default('Medium')
-                    ->colors([
-                        'Low' => 'info',
-                        'Medium' => 'warning',
-                        'High' => 'danger',
-                    ])
-                    ->formatStateUsing(fn ($state) => is_string($state) ? ucfirst($state) : ucfirst($state->value)),
+                    ->color(fn ($state) => $state?->filamentColor())
+                    ->formatStateUsing(fn ($state) => $state?->value ?? $state),
+
                 BadgeColumn::make('status')
                     ->label('Status')
-                    ->default('Open')
-                    ->colors([
-                        'Open' => 'primary',
-                        'In Progress' => 'warning',
-                        'Closed' => 'success',
-                    ])
-                    ->formatStateUsing(fn ($state) => is_string($state) ? ucfirst($state) : $state->value),         
+                    ->color(fn ($state) => $state?->filamentColor())
+                    ->formatStateUsing(fn ($state) => $state?->value ?? $state),
+
+                         
                 TextColumn::make('subject')->limit(30),
                 TextColumn::make('created_at')->since(),
             ])
