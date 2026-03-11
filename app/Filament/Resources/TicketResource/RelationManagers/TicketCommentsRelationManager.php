@@ -5,6 +5,7 @@ namespace App\Filament\Resources\TicketResource\RelationManagers;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Forms;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Hidden;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 
@@ -15,13 +16,13 @@ class TicketCommentsRelationManager extends RelationManager
     public function form(Forms\Form $form): Forms\Form
     {
         return $form->schema([
-            Textarea::make('body')
+            Textarea::make('content')
                 ->label('Comment')
                 ->required()
                 ->maxLength(1000),
 
-            Forms\Components\Hidden::make('user_id')
-            ->default(fn () => auth()->id()),
+            Hidden::make('user_id')
+                ->default(fn () => auth()->id()),
         ]);
     }
 
@@ -30,7 +31,7 @@ class TicketCommentsRelationManager extends RelationManager
         return $table
             ->columns([
                 TextColumn::make('user.name')->label('Author'),
-                TextColumn::make('body')->wrap(),
+                TextColumn::make('content')->wrap(),
                 TextColumn::make('created_at')->since()->label('Posted'),
             ])
             ->headerActions([
@@ -42,5 +43,10 @@ class TicketCommentsRelationManager extends RelationManager
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ]);
+    }
+
+    public function isReadOnly(): bool
+    {
+        return false;
     }
 }
