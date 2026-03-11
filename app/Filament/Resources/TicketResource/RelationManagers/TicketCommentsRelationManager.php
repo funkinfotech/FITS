@@ -19,6 +19,9 @@ class TicketCommentsRelationManager extends RelationManager
                 ->label('Comment')
                 ->required()
                 ->maxLength(1000),
+
+            Forms\Components\Hidden::make('user_id')
+            ->default(fn () => auth()->id()),
         ]);
     }
 
