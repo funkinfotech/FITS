@@ -37,7 +37,7 @@ class TicketCommentsRelationManager extends RelationManager
             ->headerActions([
                 Tables\Actions\CreateAction::make()
                     ->label('Add Comment')
-                    ->icon('heroicon-o-chat-bubble-left-right'),
+                    ->icon('heroicon-o-chat-bubble-left-right')
                     ->after(function () {
                         $ticket = $this->getOwnerRecord();
 
@@ -46,7 +46,7 @@ class TicketCommentsRelationManager extends RelationManager
                                 'status' => \App\Enums\TicketStatus::InProgress,
                             ]);
                         }
-                    })
+                    }),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
