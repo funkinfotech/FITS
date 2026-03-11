@@ -24,10 +24,20 @@ class TicketCommentsRelationManager extends RelationManager
 
     public function table(Tables\Table $table): Tables\Table
     {
-        return $table->columns([
-            TextColumn::make('user.name')->label('Author'),
-            TextColumn::make('body')->wrap(),
-            TextColumn::make('created_at')->since()->label('Posted'),
-        ]);
+        return $table
+            ->columns([
+                TextColumn::make('user.name')->label('Author'),
+                TextColumn::make('body')->wrap(),
+                TextColumn::make('created_at')->since()->label('Posted'),
+            ])
+            ->headerActions([
+                Tables\Actions\CreateAction::make()
+                    ->label('Add Comment')
+                    ->icon('heroicon-o-chat-bubble-left-right'),
+            ])
+            ->actions([
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+            ]);
     }
 }
