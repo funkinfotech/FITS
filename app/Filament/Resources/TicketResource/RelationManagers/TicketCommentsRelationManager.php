@@ -46,9 +46,8 @@ class TicketCommentsRelationManager extends RelationManager
                                 'status' => \App\Enums\TicketStatus::InProgress,
                             ]);
                         }
-
-                        $this->dispatch('$refresh');
                     })
+                    ->successRedirectUrl(fn () => request()->fullUrl()),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
