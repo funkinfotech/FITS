@@ -3,17 +3,16 @@
 namespace App\Filament\Resources\TicketResource\RelationManagers;
 
 use App\Enums\TicketStatus;
-use Filament\Forms;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Textarea;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Forms;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Hidden;
 use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
 
 class TicketCommentsRelationManager extends RelationManager
 {
     protected static string $relationship = 'comments';
-
-    protected static ?string $title = 'Conversation';
 
     public function form(Forms\Form $form): Forms\Form
     {
@@ -21,8 +20,7 @@ class TicketCommentsRelationManager extends RelationManager
             Textarea::make('content')
                 ->label('Comment')
                 ->required()
-                ->rows(5)
-                ->maxLength(5000),
+                ->maxLength(1000),
 
             Hidden::make('user_id')
                 ->default(fn () => auth()->id()),
@@ -33,6 +31,19 @@ class TicketCommentsRelationManager extends RelationManager
     {
         return $table
             ->heading('Conversation')
+            ->columns([
+                TextColumn::make('user.name')
+                    ->label('Author')
+                    ->default('Guest'),
+
+                TextColumn::make('content')
+                    ->label('Comment')
+                    ->wrap(),
+
+                TextColumn::make('created_at')
+                    ->since()
+                    ->label('Posted'),
+            ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()
                     ->label('Add Comment')
@@ -47,8 +58,10 @@ class TicketCommentsRelationManager extends RelationManager
                         }
                     }),
             ])
-            ->columns([])
-            ->paginated(false);
+            ->actions([
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+            ]);
     }
 
     public function isReadOnly(): bool
