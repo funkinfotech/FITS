@@ -33,16 +33,20 @@ class TicketCommentsRelationManager extends RelationManager
             ->heading('Conversation')
             ->columns([
                 TextColumn::make('user.name')
-                    ->label('Author')
+                    ->label('')
+                    ->weight('bold')
                     ->default('Guest'),
 
                 TextColumn::make('content')
-                    ->label('Comment')
-                    ->wrap(),
+                    ->label('')
+                    ->wrap()
+                    ->html()
+                    ->formatStateUsing(fn ($state) => "<div class='whitespace-pre-wrap'>{$state}</div>"),
 
                 TextColumn::make('created_at')
                     ->since()
-                    ->label('Posted'),
+                    ->label('')
+                    ->color('gray'),
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()
