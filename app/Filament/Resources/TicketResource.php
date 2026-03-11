@@ -48,7 +48,7 @@ class TicketResource extends Resource
             TextInput::make('email')->email()->required(),
             Select::make('priority')
                 ->required()
-                ->options(collect(TicketStatus::cases())
+                ->options(collect(TicketPriority::cases())
                     ->mapWithKeys(fn ($case) => [$case->value => $case->value])
                 )
                 ->default(TicketPriority::Medium->value)
