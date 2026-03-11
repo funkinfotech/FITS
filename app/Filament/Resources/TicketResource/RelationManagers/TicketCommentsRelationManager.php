@@ -47,7 +47,7 @@ class TicketCommentsRelationManager extends RelationManager
                         }
                     }),
             ])
-            ->content(view('filament.resources.ticket-resource.relation-managers.ticket-comments-timeline'))
+            ->columns([])
             ->paginated(false);
     }
 
