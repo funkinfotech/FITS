@@ -51,9 +51,9 @@ class ListTickets extends ListRecords
 
             Badge::make('status')
                 ->colors([
-                    'Open' => 'info',
+                    'Open' => 'success',
                     'In Progress' => 'warning',
-                    'Closed' => 'success',
+                    'Closed' => 'info',
                 ])
                 ->label('Status'),
         ];

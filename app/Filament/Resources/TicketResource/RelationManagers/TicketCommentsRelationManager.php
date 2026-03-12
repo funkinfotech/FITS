@@ -46,7 +46,7 @@ class TicketCommentsRelationManager extends RelationManager
                 TextColumn::make('created_at')
                     ->since()
                     ->label('')
-                    ->color('blue'),
+                    ->color('grey'),
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()
