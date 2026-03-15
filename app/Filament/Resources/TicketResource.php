@@ -75,25 +75,42 @@ class TicketResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('ticket_number')
-                ->label('Ticket #')
-                ->sortable()
-                ->searchable(),
-                TextColumn::make('name')->searchable(),
-                TextColumn::make('email')->searchable(),
+                    ->label('Ticket #')
+                    ->sortable()
+                    ->searchable(),
+
+                TextColumn::make('name')
+                    ->label('Name')
+                    ->sortable()
+                    ->searchable(),
+
+                TextColumn::make('email')
+                    ->label('Email')
+                    ->sortable()
+                    ->searchable(),
                 
                 BadgeColumn::make('priority')
                     ->label('Priority')
+                    ->sortable()
                     ->color(fn ($state) => $state?->filamentColor())
                     ->formatStateUsing(fn ($state) => $state?->value ?? $state),
 
                 BadgeColumn::make('status')
                     ->label('Status')
+                    ->sortable()
                     ->color(fn ($state) => $state?->filamentColor())
                     ->formatStateUsing(fn ($state) => $state?->value ?? $state),
 
                          
-                TextColumn::make('subject')->limit(30),
-                TextColumn::make('created_at')->since(),
+                TextColumn::make('subject')
+                    ->label('Subject')
+                    ->sortable()
+                    ->limit(30),
+
+                TextColumn::make('created_at')
+                    ->label('Created Date')
+                    ->sortable()
+                    ->since(),
             ])
             ->filters([
                 //
