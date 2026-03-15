@@ -29,9 +29,9 @@ enum TicketStatus: string
     public function filamentColor(): string
     {
         return match($this) {
-            self::Open => 'primary',
+            self::Open => 'info',
             self::InProgress => 'success',
-            self::Closed => 'info',
+            self::Closed => 'primary',
         };
     }
 }
