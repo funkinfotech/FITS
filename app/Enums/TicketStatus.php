@@ -30,8 +30,8 @@ enum TicketStatus: string
     {
         return match($this) {
             self::Open => 'primary',
-            self::InProgress => 'warning',
-            self::Closed => 'success',
+            self::InProgress => 'success',
+            self::Closed => 'info',
         };
     }
 }
