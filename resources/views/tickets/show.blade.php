@@ -27,42 +27,42 @@
         </div>
 
         <div x-data="{ editingPriority: false }">
-            <p class="text-sm text-gray-600">Priority</p>
+    <p class="text-sm text-gray-600">Priority</p>
 
-            <template x-if="!editingPriority">
-                <button
-                    type="button"
-                    @click="editingPriority = true"
-                    class="inline-block px-3 py-1 rounded-full text-sm font-semibold {{ $priority->colorClass() }}"
-                >
-                    {{ $priority->emoji() }} {{ $priority->value }}
-                </button>
-            </template>
+    <template x-if="!editingPriority">
+        <button
+            type="button"
+            @click="editingPriority = true"
+            class="inline-block px-3 py-1 rounded-full text-sm font-semibold {{ $priority->colorClass() }}"
+        >
+            {{ $priority->emoji() }} {{ $priority->value }}
+        </button>
+    </template>
 
-            <template x-if="editingPriority">
-                <form method="POST" action="{{ route('tickets.update-priority', $ticket) }}" class="mt-1">
-                    @csrf
-                    @method('PATCH')
+    <template x-if="editingPriority">
+        <form method="POST" action="{{ route('tickets.update-priority', $ticket) }}" class="mt-1">
+            @csrf
+            @method('PATCH')
 
-                    <select
-                        name="priority"
-                        x-init="$el.focus()"
-                        @change="$el.form.submit()"
-                        @blur="editingPriority = false"
-                        class="rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            <select
+                name="priority"
+                x-init="$el.focus()"
+                @change="$el.form.submit()"
+                @blur="editingPriority = false"
+                class="rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            >
+                @foreach (TicketPriority::cases() as $priorityOption)
+                    <option
+                        value="{{ $priorityOption->value }}"
+                        @selected($priority->value === $priorityOption->value)
                     >
-                        @foreach (TicketPriority::cases() as $priorityOption)
-                            <option
-                                value="{{ $priorityOption->value }}"
-                                @selected($priority->value === $priorityOption->value)
-                            >
-                                {{ $priorityOption->emoji() }} {{ $priorityOption->value }}
-                            </option>
-                        @endforeach
-                    </select>
-                </form>
-            </template>
-        </div>
+                        {{ $priorityOption->emoji() }} {{ $priorityOption->value }}
+                    </option>
+                @endforeach
+            </select>
+        </form>
+    </template>
+</div>
         <div>
             <p class="text-sm text-gray-600">Created At</p>
             <p class="text-gray-800">{{ $ticket->created_at->format('F j, Y g:i A') }}</p>
