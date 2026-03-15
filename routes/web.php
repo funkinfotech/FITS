@@ -57,5 +57,7 @@ Route::view('profile', 'profile')
 
 Route::post('/tickets/{ticket}/comments', [CommentController::class, 'store'])->name('comments.store');
 
+Route::patch('/tickets/{ticket}/priority', [TicketController::class, 'updatePriority'])
+    ->name('tickets.update-priority');
 
 require __DIR__.'/auth.php';

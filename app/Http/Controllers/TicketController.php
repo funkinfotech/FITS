@@ -55,4 +55,20 @@ class TicketController extends Controller
 
         return view('dashboard', compact('tickets'));
     }
+
+    public function updatePriority(Request $request, Ticket $ticket)
+    {
+        $validated = $request->validate([
+            'priority' => ['required', 'in:' . implode(',', array_map(
+                fn ($case) => $case->value,
+                TicketPriority::cases()
+            ))],
+        ]);
+
+        $ticket->update([
+            'priority' => $validated['priority'],
+        ]);
+
+        return back()->with('success', 'Priority updated.');
+    }
 }
