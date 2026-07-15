@@ -7,6 +7,9 @@ use Filament\Http\Middleware\AuthenticateSession;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use App\Filament\Widgets\NeedsAttentionTicketsWidget;
+use App\Filament\Widgets\TicketsByStatusChart;
+use App\Filament\Widgets\TicketStatsOverview;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -30,6 +33,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->profile()
             ->colors([
                 'primary' => '#052a44',
             ])
@@ -41,7 +45,9 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
+                TicketStatsOverview::class,
+                TicketsByStatusChart::class,
+                NeedsAttentionTicketsWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

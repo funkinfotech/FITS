@@ -23,6 +23,8 @@ class TicketController extends Controller
             abort(403, 'Unauthorized');
         }
 
+        $ticket->load(['comments' => fn ($query) => $query->where('is_internal', false)]);
+
         return view('tickets.show', compact('ticket'));
     }
 

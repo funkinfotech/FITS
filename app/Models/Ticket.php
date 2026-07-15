@@ -30,6 +30,7 @@ class Ticket extends Model
         'message',
         'ticket_number',
         'user_id',
+        'assigned_to',
     ];
 
     protected $casts = [
@@ -41,5 +42,10 @@ class Ticket extends Model
     {
         //return $this->hasMany(Comment::class);
         return $this->hasMany(Comment::class)->oldest();
+    }
+
+    public function assignedTo()
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
     }
 }

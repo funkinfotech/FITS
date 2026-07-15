@@ -22,10 +22,13 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\Filter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\ViewAction;
+use App\Models\User;
 
 
 class TicketResource extends Resource
@@ -64,6 +67,13 @@ class TicketResource extends Resource
                 ->native(false)
                 ->disablePlaceholderSelection(),
              
+
+            Select::make('assigned_to')
+                ->label('Assigned To')
+                ->options(fn () => User::where('is_admin', true)->pluck('name', 'id'))
+                ->searchable()
+                ->native(false)
+                ->placeholder('Unassigned'),
 
             TextInput::make('subject')->required(),
             Textarea::make('message')->required()->rows(6),
@@ -105,7 +115,15 @@ class TicketResource extends Resource
                 TextColumn::make('subject')
                     ->label('Subject')
                     ->sortable()
+                    ->searchable()
                     ->limit(30),
+
+                TextColumn::make('assignedTo.name')
+                    ->label('Assigned To')
+                    ->badge()
+                    ->color(fn ($state) => $state ? 'success' : 'gray')
+                    ->default('Unassigned')
+                    ->sortable(),
 
                 TextColumn::make('created_at')
                     ->label('Created Date')
@@ -113,7 +131,31 @@ class TicketResource extends Resource
                     ->since(),
             ])
             ->filters([
-                //
+                SelectFilter::make('status')
+                    ->options(collect(TicketStatus::cases())
+                        ->mapWithKeys(fn ($case) => [$case->value => $case->value])
+                    ),
+
+                SelectFilter::make('priority')
+                    ->options(collect(TicketPriority::cases())
+                        ->mapWithKeys(fn ($case) => [$case->value => $case->value])
+                    ),
+
+                SelectFilter::make('assigned_to')
+                    ->label('Assigned To')
+                    ->relationship('assignedTo', 'name')
+                    ->searchable()
+                    ->preload(),
+
+                Filter::make('my_tickets')
+                    ->label('My Tickets')
+                    ->toggle()
+                    ->query(fn (Builder $query) => $query->where('assigned_to', auth()->id())),
+
+                Filter::make('unassigned')
+                    ->label('Unassigned')
+                    ->toggle()
+                    ->query(fn (Builder $query) => $query->whereNull('assigned_to')),
             ])
             ->actions([
                 ViewAction::make(),
