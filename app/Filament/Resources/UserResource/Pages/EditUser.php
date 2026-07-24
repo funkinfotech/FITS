@@ -13,6 +13,14 @@ class EditUser extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('resetPassword')
+                ->label('Reset Password')
+                ->icon('heroicon-o-key')
+                ->color('warning')
+                ->modalHeading(fn () => "Reset password for {$this->record->name}")
+                ->modalSubmitActionLabel('Reset Password')
+                ->form(UserResource::resetPasswordFormSchema())
+                ->action(fn (array $data) => UserResource::resetUserPassword($this->record, $data)),
             Actions\DeleteAction::make(),
         ];
     }

@@ -16,7 +16,11 @@ use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Checkbox;
+use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password;
 
 class UserResource extends Resource
 {
@@ -76,12 +80,54 @@ class UserResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('resetPassword')
+                    ->label('Reset Password')
+                    ->icon('heroicon-o-key')
+                    ->color('warning')
+                    ->modalHeading(fn (User $record) => "Reset password for {$record->name}")
+                    ->modalSubmitActionLabel('Reset Password')
+                    ->form(fn () => static::resetPasswordFormSchema())
+                    ->action(fn (User $record, array $data) => static::resetUserPassword($record, $data)),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
             ]);
     }
 
+    public static function resetPasswordFormSchema(): array
+    {
+        return [
+            TextInput::make('password')
+                ->label('New Password')
+                ->password()
+                ->revealable()
+                ->required()
+                ->rule(Password::defaults())
+                ->confirmed(),
+
+            TextInput::make('password_confirmation')
+                ->label('Confirm Password')
+                ->password()
+                ->revealable()
+                ->required(),
+        ];
+    }
+
+    public static function resetUserPassword(User $record, array $data): void
+    {
+        $record->forceFill([
+            'password' => Hash::make($data['password']),
+            'remember_token' => Str::random(60),
+        ])->save();
+
+        // Reset invalidates any active sessions for this user.
+        DB::table('sessions')->where('user_id', $record->id)->delete();
+
+        Notification::make()
+            ->title("Password reset for {$record->name}")
+            ->success()
+            ->send();
+    }
 
     public static function getRelations(): array
     {

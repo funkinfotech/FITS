@@ -29,6 +29,8 @@
 
             <!-- Page Content -->
             <main class="pt-12">
+                <x-session-banner />
+
                 @hasSection('content')
                     @yield('content')
                 @else

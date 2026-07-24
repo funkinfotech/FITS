@@ -11,6 +11,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
     Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index');
     Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
+    Route::patch('/tickets/{ticket}', [TicketController::class, 'update'])->name('tickets.update');
+    Route::patch('/tickets/{ticket}/priority', [TicketController::class, 'updatePriority'])->name('tickets.update-priority');
+    Route::post('/tickets/{ticket}/comments', [CommentController::class, 'store'])->name('comments.store');
 });
 
 Route::get('/access-denied', function () {
@@ -49,15 +52,8 @@ Route::get('/dashboard', function () {
     return view('dashboard', compact('tickets'));
 })->middleware(['auth'])->name('dashboard');
 
-Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
-
 Route::view('profile', 'profile')
     ->middleware(['auth'])
     ->name('profile');
-
-Route::post('/tickets/{ticket}/comments', [CommentController::class, 'store'])->name('comments.store');
-
-Route::patch('/tickets/{ticket}/priority', [TicketController::class, 'updatePriority'])
-    ->name('tickets.update-priority');
 
 require __DIR__.'/auth.php';

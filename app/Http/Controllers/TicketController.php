@@ -23,9 +23,35 @@ class TicketController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $ticket->load(['comments' => fn ($query) => $query->where('is_internal', false)]);
+        $ticket->load([
+            'comments' => fn ($query) => $query->where('is_internal', false)->latest(),
+            'comments.user',
+        ]);
 
         return view('tickets.show', compact('ticket'));
+    }
+
+    public function update(Request $request, Ticket $ticket)
+    {
+        if ($ticket->user_id !== auth()->id()) {
+            abort(403, 'Unauthorized');
+        }
+
+        $validated = $request->validate([
+            'subject' => ['required', 'string', 'max:255'],
+            'message' => ['required', 'string'],
+        ]);
+
+        try {
+            $ticket->update($validated);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return redirect()->route('tickets.show', $ticket)
+                ->with('error', 'Something went wrong while saving your changes. Please try again.');
+        }
+
+        return redirect()->route('tickets.show', $ticket)->with('success', 'Ticket updated successfully.');
     }
 
     public function store(Request $request)
@@ -60,6 +86,10 @@ class TicketController extends Controller
 
     public function updatePriority(Request $request, Ticket $ticket)
     {
+        if ($ticket->user_id !== auth()->id()) {
+            abort(403, 'Unauthorized');
+        }
+
         $validated = $request->validate([
             'priority' => ['required', 'in:' . implode(',', array_map(
                 fn ($case) => $case->value,
