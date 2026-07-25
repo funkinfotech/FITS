@@ -32,6 +32,7 @@ class Ticket extends Model
         'user_id',
         'assigned_to',
         'company_id',
+        'contact_id',
     ];
 
     protected $casts = [
@@ -53,5 +54,10 @@ class Ticket extends Model
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function contact()
+    {
+        return $this->belongsTo(Contact::class);
     }
 }

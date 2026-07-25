@@ -8,9 +8,11 @@ use Filament\Forms;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\IconColumn;
+use Illuminate\Database\Eloquent\Builder;
 
 class TicketCommentsRelationManager extends RelationManager
 {
@@ -27,6 +29,15 @@ class TicketCommentsRelationManager extends RelationManager
             Toggle::make('is_internal')
                 ->label('Internal note (hidden from customer)')
                 ->default(false),
+
+            CheckboxList::make('recipients')
+                ->label('Notify these contacts')
+                ->relationship('recipients', 'name', modifyQueryUsing: fn (Builder $query) =>
+                    $query->where('company_id', $this->getOwnerRecord()->company_id))
+                ->default(fn () => $this->getOwnerRecord()->contact_id
+                    ? [$this->getOwnerRecord()->contact_id]
+                    : [])
+                ->columns(2),
 
             Hidden::make('user_id')
                 ->default(fn () => auth()->id()),
@@ -51,6 +62,12 @@ class TicketCommentsRelationManager extends RelationManager
                 TextColumn::make('content')
                     ->label('')
                     ->wrap(),
+
+                TextColumn::make('recipients.name')
+                    ->label('Notified')
+                    ->badge()
+                    ->listWithLineBreaks()
+                    ->default('—'),
 
                 TextColumn::make('created_at')
                     ->since()

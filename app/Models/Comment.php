@@ -26,4 +26,9 @@ class Comment extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function recipients()
+    {
+        return $this->belongsToMany(Contact::class, 'comment_contact');
+    }
 }

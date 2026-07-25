@@ -4,27 +4,22 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Company extends Model
+class Contact extends Model
 {
     protected $fillable = [
+        'company_id',
         'name',
+        'email',
         'phone',
-        'address',
-        'notes',
     ];
 
-    public function users()
+    public function company()
     {
-        return $this->hasMany(User::class);
+        return $this->belongsTo(Company::class);
     }
 
     public function tickets()
     {
         return $this->hasMany(Ticket::class);
-    }
-
-    public function contacts()
-    {
-        return $this->hasMany(Contact::class);
     }
 }

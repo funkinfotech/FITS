@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Contact;
 use App\Models\Ticket;
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
@@ -59,6 +60,12 @@ class TicketController extends Controller
             'priority' => ['required', Rule::in(array_column(TicketPriority::cases(), 'value'))],
         ]);
 
+        $contactId = Auth::user()->company_id
+            ? Contact::where('company_id', Auth::user()->company_id)
+                ->where('email', Auth::user()->email)
+                ->value('id')
+            : null;
+
         Ticket::create([
             'ticket_number' => $request->ticket_number,
             'name' => auth()->user()->name,
@@ -69,6 +76,7 @@ class TicketController extends Controller
             'message' => $request->message,
             'user_id' => Auth::id(),
             'company_id' => Auth::user()->company_id,
+            'contact_id' => $contactId,
         ]);
 
         return redirect()->route('tickets.index')->with('success', 'Ticket submitted!');

@@ -10,10 +10,13 @@ use App\Filament\Resources\TicketResource\Pages\CreateTicket;
 use App\Filament\Resources\TicketResource\Pages\EditTicket;
 use App\Filament\Resources\TicketResource\Pages\ViewTicket;
 use App\Models\Ticket;
+use App\Models\Contact;
 use App\Enums\TicketStatus;
 use App\Enums\TicketPriority;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Select;
@@ -80,6 +83,15 @@ class TicketResource extends Resource
                 ->relationship('company', 'name')
                 ->searchable()
                 ->preload()
+                ->live()
+                ->afterStateUpdated(fn (Set $set) => $set('contact_id', null))
+                ->native(false)
+                ->placeholder('None'),
+
+            Select::make('contact_id')
+                ->label('Contact')
+                ->options(fn (Get $get): array => Contact::where('company_id', $get('company_id'))->pluck('name', 'id')->toArray())
+                ->searchable()
                 ->native(false)
                 ->placeholder('None'),
 
@@ -135,6 +147,12 @@ class TicketResource extends Resource
 
                 TextColumn::make('company.name')
                     ->label('Company')
+                    ->searchable()
+                    ->sortable()
+                    ->default('—'),
+
+                TextColumn::make('contact.name')
+                    ->label('Contact')
                     ->searchable()
                     ->sortable()
                     ->default('—'),

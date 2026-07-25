@@ -12,6 +12,8 @@ class UsersRelationManager extends RelationManager
 {
     protected static string $relationship = 'users';
 
+    protected static ?string $title = 'Portal Users';
+
     public function form(Form $form): Form
     {
         return $form->schema([
@@ -47,7 +49,7 @@ class UsersRelationManager extends RelationManager
             ])
             ->headerActions([
                 Tables\Actions\AssociateAction::make()
-                    ->label('Add Contact')
+                    ->label('Associate Portal User')
                     ->preloadRecordSelect(),
             ])
             ->actions([

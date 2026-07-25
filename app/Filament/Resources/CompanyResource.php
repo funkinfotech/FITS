@@ -9,6 +9,7 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Repeater;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -21,6 +22,7 @@ class CompanyResource extends Resource
     protected static ?string $navigationLabel = 'Companies';
     protected static ?string $navigationIcon = 'heroicon-o-building-office-2';
     protected static ?string $navigationGroup = 'Admin';
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {
@@ -33,8 +35,33 @@ class CompanyResource extends Resource
                 ->tel()
                 ->maxLength(255),
 
+            Textarea::make('address')
+                ->rows(3)
+                ->columnSpanFull(),
+
             Textarea::make('notes')
                 ->rows(4)
+                ->columnSpanFull(),
+
+            Repeater::make('contacts')
+                ->relationship()
+                ->schema([
+                    TextInput::make('name')
+                        ->required()
+                        ->maxLength(255),
+
+                    TextInput::make('email')
+                        ->email()
+                        ->required()
+                        ->maxLength(255),
+
+                    TextInput::make('phone')
+                        ->tel()
+                        ->maxLength(255),
+                ])
+                ->columns(3)
+                ->minItems(1)
+                ->required()
                 ->columnSpanFull(),
         ]);
     }
@@ -50,8 +77,13 @@ class CompanyResource extends Resource
                 TextColumn::make('phone')
                     ->label('Phone'),
 
-                TextColumn::make('users_count')
+                TextColumn::make('contacts_count')
                     ->label('Contacts')
+                    ->counts('contacts')
+                    ->sortable(),
+
+                TextColumn::make('users_count')
+                    ->label('Portal Users')
                     ->counts('users')
                     ->sortable(),
 
