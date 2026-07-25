@@ -50,8 +50,82 @@ class TicketResource extends Resource
     {
         return $form->schema([
 
+            Select::make('company_id')
+                ->label('Company')
+                ->relationship('company', 'name')
+                ->searchable()
+                ->preload()
+                ->live()
+                ->afterStateUpdated(fn (Set $set) => $set('contact_id', null))
+                ->native(false)
+                ->placeholder('None'),
+
+            Select::make('contact_id')
+                ->label('Contact')
+                ->options(fn (Get $get): array => Contact::where('company_id', $get('company_id'))->pluck('name', 'id')->toArray())
+                ->searchable()
+                ->live()
+                ->afterStateUpdated(function (Get $get, Set $set, $state) {
+                    $contact = $state ? Contact::with('emails')->find($state) : null;
+
+                    $set('name', $contact?->name);
+
+                    $emails = $contact?->emails ?? collect();
+                    $primary = $emails->firstWhere('is_primary', true) ?? $emails->first();
+
+                    $set('email', $primary?->email);
+                    $set('contact_email_choice', $primary?->email);
+                })
+                ->native(false)
+                ->placeholder('None')
+                ->createOptionForm([
+                    TextInput::make('name')
+                        ->required()
+                        ->maxLength(255),
+
+                    TextInput::make('email')
+                        ->email()
+                        ->required()
+                        ->maxLength(255),
+
+                    TextInput::make('phone')
+                        ->tel()
+                        ->maxLength(255),
+                ])
+                ->createOptionUsing(function (array $data, Get $get): int {
+                    $contact = Contact::create([
+                        'company_id' => $get('company_id'),
+                        'name' => $data['name'],
+                        'phone' => $data['phone'] ?? null,
+                    ]);
+
+                    $contact->emails()->create([
+                        'email' => $data['email'],
+                        'is_primary' => true,
+                    ]);
+
+                    return $contact->id;
+                }),
+
             TextInput::make('name')->required(),
-            TextInput::make('email')->email()->required(),
+
+            Select::make('contact_email_choice')
+                ->label('Choose Email')
+                ->options(fn (Get $get): array => $get('contact_id')
+                    ? Contact::find($get('contact_id'))?->emails->pluck('email', 'email')->toArray() ?? []
+                    : [])
+                ->visible(fn (Get $get): bool => $get('contact_id')
+                    && (Contact::find($get('contact_id'))?->emails->count() ?? 0) > 1)
+                ->dehydrated(false)
+                ->live()
+                ->afterStateUpdated(fn (Set $set, $state) => $set('email', $state)),
+
+            TextInput::make('email')
+                ->email()
+                ->required()
+                ->visible(fn (Get $get): bool => ! $get('contact_id')
+                    || (Contact::find($get('contact_id'))?->emails->count() ?? 0) <= 1),
+
             Select::make('priority')
                 ->required()
                 ->options(collect(TicketPriority::cases())
@@ -69,7 +143,7 @@ class TicketResource extends Resource
                 ->default(TicketStatus::Open->value)
                 ->native(false)
                 ->disablePlaceholderSelection(),
-             
+
 
             Select::make('assigned_to')
                 ->label('Assigned To')
@@ -77,23 +151,6 @@ class TicketResource extends Resource
                 ->searchable()
                 ->native(false)
                 ->placeholder('Unassigned'),
-
-            Select::make('company_id')
-                ->label('Company')
-                ->relationship('company', 'name')
-                ->searchable()
-                ->preload()
-                ->live()
-                ->afterStateUpdated(fn (Set $set) => $set('contact_id', null))
-                ->native(false)
-                ->placeholder('None'),
-
-            Select::make('contact_id')
-                ->label('Contact')
-                ->options(fn (Get $get): array => Contact::where('company_id', $get('company_id'))->pluck('name', 'id')->toArray())
-                ->searchable()
-                ->native(false)
-                ->placeholder('None'),
 
             TextInput::make('subject')->required(),
             Textarea::make('message')->required()->rows(6),
