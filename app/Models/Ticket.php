@@ -33,6 +33,8 @@ class Ticket extends Model
         'assigned_to',
         'company_id',
         'contact_id',
+        'inbound_message_id',
+        'source',
     ];
 
     protected $casts = [

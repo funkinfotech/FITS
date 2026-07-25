@@ -157,6 +157,11 @@ class TicketResource extends Resource
                     ->sortable()
                     ->default('—'),
 
+                BadgeColumn::make('source')
+                    ->label('Source')
+                    ->color(fn (string $state): string => $state === 'email' ? 'info' : 'gray')
+                    ->formatStateUsing(fn (string $state): string => ucfirst($state)),
+
                 TextColumn::make('created_at')
                     ->label('Created Date')
                     ->sortable()
@@ -184,6 +189,12 @@ class TicketResource extends Resource
                     ->relationship('company', 'name')
                     ->searchable()
                     ->preload(),
+
+                SelectFilter::make('source')
+                    ->options([
+                        'portal' => 'Portal',
+                        'email' => 'Email',
+                    ]),
 
                 Filter::make('my_tickets')
                     ->label('My Tickets')

@@ -9,8 +9,10 @@ class Comment extends Model
     protected $fillable = [
         'ticket_id',
         'user_id',
+        'contact_id',
         'content',
         'is_internal',
+        'inbound_message_id',
     ];
 
     protected $casts = [
@@ -25,6 +27,11 @@ class Comment extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function contact()
+    {
+        return $this->belongsTo(Contact::class);
     }
 
     public function recipients()

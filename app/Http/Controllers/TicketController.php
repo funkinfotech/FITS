@@ -61,8 +61,8 @@ class TicketController extends Controller
         ]);
 
         $contactId = Auth::user()->company_id
-            ? Contact::where('company_id', Auth::user()->company_id)
-                ->where('email', Auth::user()->email)
+            ? Contact::whereHas('emails', fn ($query) => $query->where('email', Auth::user()->email))
+                ->where('company_id', Auth::user()->company_id)
                 ->value('id')
             : null;
 

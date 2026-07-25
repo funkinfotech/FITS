@@ -9,7 +9,6 @@ class Contact extends Model
     protected $fillable = [
         'company_id',
         'name',
-        'email',
         'phone',
     ];
 
@@ -21,5 +20,21 @@ class Contact extends Model
     public function tickets()
     {
         return $this->hasMany(Ticket::class);
+    }
+
+    public function emails()
+    {
+        return $this->hasMany(ContactEmail::class);
+    }
+
+    public function user()
+    {
+        return $this->hasOne(User::class);
+    }
+
+    public function getEmailAttribute(): ?string
+    {
+        return $this->emails->firstWhere('is_primary', true)?->email
+            ?? $this->emails->first()?->email;
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\TicketResource\RelationManagers;
 
 use App\Enums\TicketStatus;
+use App\Support\TicketMailer;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Forms;
 use Filament\Forms\Components\Textarea;
@@ -57,7 +58,7 @@ class TicketCommentsRelationManager extends RelationManager
                 TextColumn::make('user.name')
                     ->label('')
                     ->weight('bold')
-                    ->default('Guest'),
+                    ->formatStateUsing(fn ($state, $record) => $state ?? $record->contact?->name ?? 'Guest'),
 
                 TextColumn::make('content')
                     ->label('')
@@ -85,6 +86,10 @@ class TicketCommentsRelationManager extends RelationManager
                             $ticket->update([
                                 'status' => TicketStatus::InProgress,
                             ]);
+                        }
+
+                        if (! $record->is_internal) {
+                            TicketMailer::sendReply($record);
                         }
                     }),
             ])

@@ -23,6 +23,7 @@ class User extends Authenticatable
         'password',
         'is_admin',
         'company_id',
+        'contact_id',
     ];
 
     protected $casts = [
@@ -65,6 +66,11 @@ class User extends Authenticatable
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function contact()
+    {
+        return $this->belongsTo(Contact::class);
     }
 
 }

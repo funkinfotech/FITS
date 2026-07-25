@@ -7,14 +7,18 @@ use App\Models\Company;
 use App\Models\Contact;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Checkbox;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
 use Illuminate\Support\Collection;
 
 class ContactResource extends Resource
@@ -59,14 +63,39 @@ class ContactResource extends Resource
                 ->required()
                 ->maxLength(255),
 
-            TextInput::make('email')
-                ->email()
-                ->required()
-                ->maxLength(255),
-
             TextInput::make('phone')
                 ->tel()
                 ->maxLength(255),
+
+            Repeater::make('emails')
+                ->relationship()
+                ->schema([
+                    TextInput::make('email')
+                        ->email()
+                        ->required()
+                        ->maxLength(255),
+
+                    Checkbox::make('is_primary')
+                        ->label('Primary'),
+                ])
+                ->columns(2)
+                ->minItems(1)
+                ->required()
+                ->columnSpanFull(),
+
+            Checkbox::make('create_portal_user')
+                ->label('Create a portal login for this contact')
+                ->live()
+                ->visibleOn('create'),
+
+            TextInput::make('portal_password')
+                ->label('Portal Password')
+                ->password()
+                ->revealable()
+                ->required()
+                ->minLength(8)
+                ->visible(fn (Get $get): bool => $get('create_portal_user'))
+                ->visibleOn('create'),
         ]);
     }
 
@@ -78,9 +107,10 @@ class ContactResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('email')
-                    ->searchable()
-                    ->sortable(),
+                TextColumn::make('emails.email')
+                    ->label('Emails')
+                    ->badge()
+                    ->listWithLineBreaks(),
 
                 TextColumn::make('phone'),
 
@@ -88,6 +118,11 @@ class ContactResource extends Resource
                     ->label('Company')
                     ->searchable()
                     ->sortable(),
+
+                IconColumn::make('has_portal_login')
+                    ->label('Portal Login')
+                    ->boolean()
+                    ->getStateUsing(fn (Contact $record): bool => $record->user !== null),
 
                 TextColumn::make('created_at')
                     ->label('Created')

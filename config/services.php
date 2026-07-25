@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'brevo' => [
+        'key' => env('BREVO_API_KEY'),
+        'inbound_webhook_secret' => env('BREVO_INBOUND_WEBHOOK_SECRET'),
+    ],
+
 ];

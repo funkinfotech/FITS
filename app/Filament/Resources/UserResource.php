@@ -4,9 +4,12 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\UserResource\Pages;
 use App\Filament\Resources\UserResource\RelationManagers;
+use App\Models\Contact;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Resources\Resource;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,6 +19,7 @@ use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Checkbox;
+use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -59,7 +63,42 @@ class UserResource extends Resource
                 ->label('Company')
                 ->relationship('company', 'name')
                 ->searchable()
-                ->preload(),
+                ->preload()
+                ->live()
+                ->afterStateUpdated(fn (Set $set) => $set('contact_id', null)),
+
+            Select::make('contact_id')
+                ->label('Contact')
+                ->options(fn (Get $get): array => Contact::where('company_id', $get('company_id'))->pluck('name', 'id')->toArray())
+                ->searchable()
+                ->createOptionForm([
+                    TextInput::make('name')
+                        ->required()
+                        ->maxLength(255),
+
+                    TextInput::make('email')
+                        ->email()
+                        ->required()
+                        ->maxLength(255),
+
+                    TextInput::make('phone')
+                        ->tel()
+                        ->maxLength(255),
+                ])
+                ->createOptionUsing(function (array $data, Get $get): int {
+                    $contact = Contact::create([
+                        'company_id' => $get('company_id'),
+                        'name' => $data['name'],
+                        'phone' => $data['phone'] ?? null,
+                    ]);
+
+                    $contact->emails()->create([
+                        'email' => $data['email'],
+                        'is_primary' => true,
+                    ]);
+
+                    return $contact->id;
+                }),
         ]);
     }
 
@@ -71,6 +110,11 @@ class UserResource extends Resource
                 TextColumn::make('email')->searchable(),
                 TextColumn::make('company.name')
                     ->label('Company')
+                    ->searchable()
+                    ->sortable()
+                    ->default('—'),
+                TextColumn::make('contact.name')
+                    ->label('Contact')
                     ->searchable()
                     ->sortable()
                     ->default('—'),

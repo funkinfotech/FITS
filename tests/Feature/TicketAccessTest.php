@@ -105,6 +105,44 @@ class TicketAccessTest extends TestCase
         $this->assertDatabaseMissing('comments', ['ticket_id' => $ticket->id]);
     }
 
+    public function test_admin_can_view_ticket_with_no_owner_or_company(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $ticket = Ticket::create([
+            'ticket_number' => (string) mt_rand(10000000, 99999999),
+            'name' => 'Asia King',
+            'email' => 'asia.king0793@gmail.com',
+            'priority' => TicketPriority::Medium->value,
+            'status' => TicketStatus::Open->value,
+            'subject' => 'Inbound email ticket',
+            'message' => 'No matching contact or portal user.',
+            'source' => 'email',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('tickets.show', $ticket))
+            ->assertOk();
+    }
+
+    public function test_non_admin_cannot_view_ticket_with_no_owner_or_company(): void
+    {
+        $stranger = User::factory()->create();
+        $ticket = Ticket::create([
+            'ticket_number' => (string) mt_rand(10000000, 99999999),
+            'name' => 'Asia King',
+            'email' => 'asia.king0793@gmail.com',
+            'priority' => TicketPriority::Medium->value,
+            'status' => TicketStatus::Open->value,
+            'subject' => 'Inbound email ticket',
+            'message' => 'No matching contact or portal user.',
+            'source' => 'email',
+        ]);
+
+        $this->actingAs($stranger)
+            ->get(route('tickets.show', $ticket))
+            ->assertForbidden();
+    }
+
     public function test_dashboard_includes_tickets_from_coworkers(): void
     {
         $company = Company::create(['name' => 'Acme Corp']);

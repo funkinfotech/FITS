@@ -9,12 +9,12 @@ class TicketPolicy
 {
     public function view(User $user, Ticket $ticket): bool
     {
-        return $this->belongsToTicket($user, $ticket);
+        return $user->is_admin || $this->belongsToTicket($user, $ticket);
     }
 
     public function update(User $user, Ticket $ticket): bool
     {
-        return $this->belongsToTicket($user, $ticket);
+        return $user->is_admin || $this->belongsToTicket($user, $ticket);
     }
 
     protected function belongsToTicket(User $user, Ticket $ticket): bool
