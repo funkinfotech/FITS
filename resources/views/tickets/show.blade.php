@@ -145,7 +145,7 @@
             <div class="bg-white rounded-lg shadow-sm p-4 mb-4 border">
                 <div class="flex items-center justify-between">
                     <div class="font-medium text-gray-800">
-                        {{ $comment->user->name ?? 'Guest' }}
+                        {{ $comment->user->name ?? $comment->contact->name ?? 'Guest' }}
                     </div>
                     <div class="text-sm text-gray-500">
                         {{ $comment->created_at->diffForHumans() }}

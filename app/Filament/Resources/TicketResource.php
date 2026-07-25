@@ -17,6 +17,7 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Select;
@@ -46,6 +47,16 @@ class TicketResource extends Resource
         return 'Tickets';
     }
 
+    protected static function applyContact(Set $set, ?Contact $contact): void
+    {
+        $set('name', $contact?->name);
+
+        $emails = $contact?->emails ?? collect();
+        $primary = $emails->firstWhere('is_primary', true) ?? $emails->first();
+
+        $set('email', $primary?->email);
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([
@@ -53,28 +64,29 @@ class TicketResource extends Resource
             Select::make('company_id')
                 ->label('Company')
                 ->relationship('company', 'name')
+                ->required(fn (string $operation): bool => $operation === 'create')
                 ->searchable()
                 ->preload()
                 ->live()
-                ->afterStateUpdated(fn (Set $set) => $set('contact_id', null))
+                ->afterStateUpdated(function (Set $set, $state) {
+                    $defaultContact = $state
+                        ? Contact::with('emails')->where('company_id', $state)->oldest()->first()
+                        : null;
+
+                    $set('contact_id', $defaultContact?->id);
+                    self::applyContact($set, $defaultContact);
+                })
                 ->native(false)
                 ->placeholder('None'),
 
             Select::make('contact_id')
                 ->label('Contact')
+                ->required(fn (string $operation): bool => $operation === 'create')
                 ->options(fn (Get $get): array => Contact::where('company_id', $get('company_id'))->pluck('name', 'id')->toArray())
                 ->searchable()
                 ->live()
-                ->afterStateUpdated(function (Get $get, Set $set, $state) {
-                    $contact = $state ? Contact::with('emails')->find($state) : null;
-
-                    $set('name', $contact?->name);
-
-                    $emails = $contact?->emails ?? collect();
-                    $primary = $emails->firstWhere('is_primary', true) ?? $emails->first();
-
-                    $set('email', $primary?->email);
-                    $set('contact_email_choice', $primary?->email);
+                ->afterStateUpdated(function (Set $set, $state) {
+                    self::applyContact($set, $state ? Contact::with('emails')->find($state) : null);
                 })
                 ->native(false)
                 ->placeholder('None')
@@ -107,24 +119,8 @@ class TicketResource extends Resource
                     return $contact->id;
                 }),
 
-            TextInput::make('name')->required(),
-
-            Select::make('contact_email_choice')
-                ->label('Choose Email')
-                ->options(fn (Get $get): array => $get('contact_id')
-                    ? Contact::find($get('contact_id'))?->emails->pluck('email', 'email')->toArray() ?? []
-                    : [])
-                ->visible(fn (Get $get): bool => $get('contact_id')
-                    && (Contact::find($get('contact_id'))?->emails->count() ?? 0) > 1)
-                ->dehydrated(false)
-                ->live()
-                ->afterStateUpdated(fn (Set $set, $state) => $set('email', $state)),
-
-            TextInput::make('email')
-                ->email()
-                ->required()
-                ->visible(fn (Get $get): bool => ! $get('contact_id')
-                    || (Contact::find($get('contact_id'))?->emails->count() ?? 0) <= 1),
+            Hidden::make('name'),
+            Hidden::make('email'),
 
             Select::make('priority')
                 ->required()
@@ -145,6 +141,8 @@ class TicketResource extends Resource
                 ->disablePlaceholderSelection(),
 
 
+            TextInput::make('subject')->required(),
+
             Select::make('assigned_to')
                 ->label('Assigned To')
                 ->options(fn () => User::where('is_admin', true)->pluck('name', 'id'))
@@ -152,7 +150,6 @@ class TicketResource extends Resource
                 ->native(false)
                 ->placeholder('Unassigned'),
 
-            TextInput::make('subject')->required(),
             Textarea::make('message')->required()->rows(6),
             ]);
     }

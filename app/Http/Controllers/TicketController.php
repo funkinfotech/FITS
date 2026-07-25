@@ -23,11 +23,23 @@ class TicketController extends Controller
         $this->authorize('view', $ticket);
 
         $ticket->load([
-            'comments' => fn ($query) => $query->where('is_internal', false)->latest(),
+            'comments' => fn ($query) => $query->where('is_internal', false)->reorder('created_at', 'desc'),
             'comments.user',
+            'comments.contact',
         ]);
 
         return view('tickets.show', compact('ticket'));
+    }
+
+    public function guestShow(Ticket $ticket)
+    {
+        $ticket->load([
+            'comments' => fn ($query) => $query->where('is_internal', false)->reorder('created_at', 'desc'),
+            'comments.user',
+            'comments.contact',
+        ]);
+
+        return view('tickets.guest-show', compact('ticket'));
     }
 
     public function update(Request $request, Ticket $ticket)

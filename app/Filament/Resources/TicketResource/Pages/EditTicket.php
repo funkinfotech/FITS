@@ -7,6 +7,7 @@ use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Resources\Form;
 use Filament\Forms;
+use Livewire\Attributes\On;
 
 
 class EditTicket extends EditRecord
@@ -24,5 +25,12 @@ class EditTicket extends EditRecord
     {
 
         return $this->getResource()::getUrl('index');
+    }
+
+    #[On('ticket-updated')]
+    public function refreshTicket(): void
+    {
+        $this->record->refresh();
+        $this->refreshFormData(['status']);
     }
 }

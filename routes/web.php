@@ -19,6 +19,10 @@ Route::get('/access-denied', function () {
     return view('errors.access-denied');
 })->name('access-denied');
 
+Route::get('/tickets/{ticket}/guest-view', [TicketController::class, 'guestShow'])
+    ->middleware('signed')
+    ->name('tickets.guest-view');
+
 //Route::view('/', 'welcome');
 Route::get('/', function () {
     $taglines = [

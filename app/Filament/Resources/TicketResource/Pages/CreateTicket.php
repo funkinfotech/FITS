@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\TicketResource\Pages;
 
 use App\Filament\Resources\TicketResource;
+use App\Support\TicketMailer;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
@@ -16,6 +17,11 @@ class CreateTicket extends CreateRecord
     {
         $data['user_id'] = Auth::id(); // Assign currently logged-in user
         return static::getModel()::create($data);
+    }
+
+    protected function afterCreate(): void
+    {
+        TicketMailer::sendTicketCreated($this->record);
     }
 
     protected function getRedirectUrl(): string

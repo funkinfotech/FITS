@@ -8,6 +8,7 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\URL;
 
 class TicketReplyMail extends Mailable
 {
@@ -29,11 +30,15 @@ class TicketReplyMail extends Mailable
 
     public function content(): Content
     {
+        $ticket = $this->comment->ticket;
+
         return new Content(
             view: 'emails.ticket-reply',
+            text: 'emails.ticket-reply-text',
             with: [
-                'ticket' => $this->comment->ticket,
+                'ticket' => $ticket,
                 'comment' => $this->comment,
+                'ticketUrl' => URL::signedRoute('tickets.guest-view', ['ticket' => $ticket->id]),
             ],
         );
     }

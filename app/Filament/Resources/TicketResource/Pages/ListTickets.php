@@ -39,7 +39,8 @@ class ListTickets extends ListRecords
                 ->badge(TicketResource::getModel()::where('status', TicketStatus::InProgress)->count()),
 
             'closed' => Tab::make('Closed')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', TicketStatus::Closed)),
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', TicketStatus::Closed))
+                ->badge(TicketResource::getModel()::where('status', TicketStatus::Closed)->count()),
 
             'unassigned' => Tab::make('Unassigned')
                 ->modifyQueryUsing(fn (Builder $query) => $query->whereNull('assigned_to'))

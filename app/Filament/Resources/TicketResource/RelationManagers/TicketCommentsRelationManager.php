@@ -10,6 +10,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\Select;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\IconColumn;
@@ -18,6 +19,8 @@ use Illuminate\Database\Eloquent\Builder;
 class TicketCommentsRelationManager extends RelationManager
 {
     protected static string $relationship = 'comments';
+
+    protected ?string $pendingTicketStatus = null;
 
     public function form(Forms\Form $form): Forms\Form
     {
@@ -30,6 +33,20 @@ class TicketCommentsRelationManager extends RelationManager
             Toggle::make('is_internal')
                 ->label('Internal note (hidden from customer)')
                 ->default(false),
+
+            Select::make('ticket_status')
+                ->label('Set Status')
+                ->options(collect(TicketStatus::cases())
+                    ->mapWithKeys(fn ($case) => [$case->value => $case->value])
+                )
+                ->native(false)
+                ->default(function () {
+                    $ticket = $this->getOwnerRecord();
+
+                    return $ticket->status === TicketStatus::Open
+                        ? TicketStatus::InProgress->value
+                        : $ticket->status->value;
+                }),
 
             CheckboxList::make('recipients')
                 ->label('Notify these contacts')
@@ -78,14 +95,21 @@ class TicketCommentsRelationManager extends RelationManager
             ->headerActions([
                 Tables\Actions\CreateAction::make()
                     ->label('Add Comment')
+                    ->modalSubmitActionLabel('Send')
+                    ->createAnother(false)
                     ->icon('heroicon-o-chat-bubble-left-right')
+                    ->mutateFormDataUsing(function (array $data): array {
+                        $this->pendingTicketStatus = $data['ticket_status'] ?? null;
+                        unset($data['ticket_status']);
+
+                        return $data;
+                    })
                     ->after(function ($record) {
                         $ticket = $this->getOwnerRecord();
 
-                        if (! $record->is_internal && $ticket->status === TicketStatus::Open) {
-                            $ticket->update([
-                                'status' => TicketStatus::InProgress,
-                            ]);
+                        if ($this->pendingTicketStatus && $this->pendingTicketStatus !== $ticket->status->value) {
+                            $ticket->update(['status' => $this->pendingTicketStatus]);
+                            $this->dispatch('ticket-updated');
                         }
 
                         if (! $record->is_internal) {

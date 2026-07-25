@@ -10,6 +10,7 @@ use Filament\Forms\Form;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Checkbox;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -50,16 +51,27 @@ class CompanyResource extends Resource
                         ->required()
                         ->maxLength(255),
 
-                    TextInput::make('email')
-                        ->email()
-                        ->required()
-                        ->maxLength(255),
-
                     TextInput::make('phone')
                         ->tel()
                         ->maxLength(255),
+
+                    Repeater::make('emails')
+                        ->relationship()
+                        ->schema([
+                            TextInput::make('email')
+                                ->email()
+                                ->required()
+                                ->maxLength(255),
+
+                            Checkbox::make('is_primary')
+                                ->label('Primary'),
+                        ])
+                        ->columns(2)
+                        ->minItems(1)
+                        ->required()
+                        ->columnSpanFull(),
                 ])
-                ->columns(3)
+                ->columns(2)
                 ->minItems(1)
                 ->required()
                 ->columnSpanFull(),

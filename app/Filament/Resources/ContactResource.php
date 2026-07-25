@@ -20,6 +20,7 @@ use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\IconColumn;
 use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Builder;
 
 class ContactResource extends Resource
 {
@@ -108,10 +109,10 @@ class ContactResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('emails.email')
-                    ->label('Emails')
-                    ->badge()
-                    ->listWithLineBreaks(),
+                TextColumn::make('email')
+                    ->label('Email')
+                    ->searchable(query: fn (Builder $query, string $search): Builder =>
+                        $query->orWhereHas('emails', fn (Builder $q) => $q->where('email', 'like', "%{$search}%"))),
 
                 TextColumn::make('phone'),
 
