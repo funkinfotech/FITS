@@ -6,24 +6,48 @@
     <meta name="format-detection" content="telephone=no, date=no, address=no, email=no">
     <title>Re: [Ticket #{{ $ticket->ticket_number }}] {{ $ticket->subject }}</title>
 </head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #111827;">
-    <div style="max-width: 600px; margin: 0 auto; padding: 24px;">
-        <p style="white-space: pre-line;">{{ $comment->content }}</p>
+<body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6;">
+    <tr>
+        <td align="center" style="padding: 32px 16px;">
+            <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
 
-        <p>
-            &mdash;<br>
-            Ticket #{{ $ticket->ticket_number }}: {{ $ticket->subject }}
-        </p>
+                <tr>
+                    <td style="padding-bottom: 20px;">
+                        <a href="{{ url('/') }}" style="text-decoration: none;">
+                            <img src="{{ asset('images/funkit-logo.png') }}" alt="FunkIT" width="28" height="28" style="vertical-align: middle; border-radius: 6px;">
+                            <span style="vertical-align: middle; margin-left: 8px; font-size: 15px; font-weight: 600; color: #052a44; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">FunkIT HelpDesk</span>
+                        </a>
+                    </td>
+                </tr>
 
-        <p>
-            <a href="{{ $ticketUrl }}" style="display: inline-block; padding: 10px 18px; background-color: #052a44; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 14px;">
-                View Ticket
-            </a>
-        </p>
+                <tr>
+                    <td style="background-color: #ffffff; border-radius: 10px; padding: 28px;">
+                        <p style="margin: 0 0 4px; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #052a44;">New reply</p>
+                        <h1 style="margin: 0 0 4px; font-size: 20px; font-weight: 700; color: #111827;">{{ $ticket->subject }}</h1>
+                        <p style="margin: 0 0 20px; font-size: 13px; color: #6b7280;">Ticket #{{ $ticket->ticket_number }}</p>
 
-        <p style="color: #6b7280; font-size: 13px;">
-            Reply to this email to continue the conversation on this ticket.
-        </p>
-    </div>
+                        <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+                            <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #1f2937; white-space: pre-line;">{{ $comment->content }}</p>
+                        </div>
+
+                        <a href="{{ $ticketUrl }}" style="display: inline-block; padding: 10px 20px; background-color: #052a44; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 600;">
+                            View Ticket
+                        </a>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="padding-top: 20px;">
+                        <p style="margin: 0; font-size: 12px; color: #9ca3af;">
+                            Reply to this email to continue the conversation on this ticket.
+                        </p>
+                    </td>
+                </tr>
+
+            </table>
+        </td>
+    </tr>
+</table>
 </body>
 </html>

@@ -195,7 +195,7 @@ class TicketResource extends Resource
                 TextColumn::make('assignedTo.name')
                     ->label('Assigned To')
                     ->badge()
-                    ->color(fn ($state) => $state ? 'success' : 'gray')
+                    ->color(fn ($state) => $state ? 'success' : 'danger')
                     ->default('Unassigned')
                     ->sortable(),
 
