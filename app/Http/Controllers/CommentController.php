@@ -9,9 +9,7 @@ class CommentController extends Controller
 {
     public function store(Request $request, Ticket $ticket)
     {
-        if ($ticket->user_id !== auth()->id()) {
-            abort(403, 'Unauthorized');
-        }
+        $this->authorize('view', $ticket);
 
         $request->validate([
             'content' => 'required|string',

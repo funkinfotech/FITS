@@ -75,6 +75,14 @@ class TicketResource extends Resource
                 ->native(false)
                 ->placeholder('Unassigned'),
 
+            Select::make('company_id')
+                ->label('Company')
+                ->relationship('company', 'name')
+                ->searchable()
+                ->preload()
+                ->native(false)
+                ->placeholder('None'),
+
             TextInput::make('subject')->required(),
             Textarea::make('message')->required()->rows(6),
             ]);
@@ -125,6 +133,12 @@ class TicketResource extends Resource
                     ->default('Unassigned')
                     ->sortable(),
 
+                TextColumn::make('company.name')
+                    ->label('Company')
+                    ->searchable()
+                    ->sortable()
+                    ->default('—'),
+
                 TextColumn::make('created_at')
                     ->label('Created Date')
                     ->sortable()
@@ -144,6 +158,12 @@ class TicketResource extends Resource
                 SelectFilter::make('assigned_to')
                     ->label('Assigned To')
                     ->relationship('assignedTo', 'name')
+                    ->searchable()
+                    ->preload(),
+
+                SelectFilter::make('company_id')
+                    ->label('Company')
+                    ->relationship('company', 'name')
                     ->searchable()
                     ->preload(),
 

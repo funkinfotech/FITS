@@ -19,9 +19,7 @@ class TicketController extends Controller
 
     public function show(Ticket $ticket)
     {
-        if ($ticket->user_id !== auth()->id()) {
-            abort(403, 'Unauthorized');
-        }
+        $this->authorize('view', $ticket);
 
         $ticket->load([
             'comments' => fn ($query) => $query->where('is_internal', false)->latest(),
@@ -33,9 +31,7 @@ class TicketController extends Controller
 
     public function update(Request $request, Ticket $ticket)
     {
-        if ($ticket->user_id !== auth()->id()) {
-            abort(403, 'Unauthorized');
-        }
+        $this->authorize('update', $ticket);
 
         $validated = $request->validate([
             'subject' => ['required', 'string', 'max:255'],
@@ -72,6 +68,7 @@ class TicketController extends Controller
             'subject' => $request->subject,
             'message' => $request->message,
             'user_id' => Auth::id(),
+            'company_id' => Auth::user()->company_id,
         ]);
 
         return redirect()->route('tickets.index')->with('success', 'Ticket submitted!');
@@ -79,16 +76,24 @@ class TicketController extends Controller
 
     public function index()
     {
-        $tickets = Ticket::where('user_id', Auth::id())->latest()->get();
+        $user = Auth::user();
+
+        $tickets = Ticket::where(function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+
+                if ($user->company_id) {
+                    $query->orWhere('company_id', $user->company_id);
+                }
+            })
+            ->latest()
+            ->get();
 
         return view('dashboard', compact('tickets'));
     }
 
     public function updatePriority(Request $request, Ticket $ticket)
     {
-        if ($ticket->user_id !== auth()->id()) {
-            abort(403, 'Unauthorized');
-        }
+        $this->authorize('update', $ticket);
 
         $validated = $request->validate([
             'priority' => ['required', 'in:' . implode(',', array_map(

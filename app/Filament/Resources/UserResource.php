@@ -52,6 +52,12 @@ class UserResource extends Resource
             Checkbox::make('is_admin')
                 ->label('Admin')
                 ->default(false),
+
+            Forms\Components\Select::make('company_id')
+                ->label('Company')
+                ->relationship('company', 'name')
+                ->searchable()
+                ->preload(),
         ]);
     }
 
@@ -61,6 +67,11 @@ class UserResource extends Resource
             ->columns([
                 TextColumn::make('name')->searchable(),
                 TextColumn::make('email')->searchable(),
+                TextColumn::make('company.name')
+                    ->label('Company')
+                    ->searchable()
+                    ->sortable()
+                    ->default('—'),
                 TextColumn::make('created_at')
                     ->label('Created')
                     ->dateTime()
@@ -75,7 +86,11 @@ class UserResource extends Resource
                     ->formatStateUsing(fn ($state) => $state ? 'Yes' : 'No'),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('company_id')
+                    ->label('Company')
+                    ->relationship('company', 'name')
+                    ->searchable()
+                    ->preload(),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),

@@ -22,6 +22,7 @@ class User extends Authenticatable
         'email',
         'password',
         'is_admin',
+        'company_id',
     ];
 
     protected $casts = [
@@ -59,6 +60,11 @@ class User extends Authenticatable
     public function assignedTickets()
     {
         return $this->hasMany(Ticket::class, 'assigned_to');
+    }
+
+    public function company()
+    {
+        return $this->belongsTo(Company::class);
     }
 
 }
