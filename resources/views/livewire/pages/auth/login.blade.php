@@ -1,7 +1,9 @@
 <?php
 
 use App\Livewire\Forms\LoginForm;
+use App\Support\Turnstile;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
 
@@ -9,12 +11,20 @@ new #[Layout('layouts.guest')] class extends Component
 {
     public LoginForm $form;
 
+    public string $turnstileToken = '';
+
     /**
      * Handle an incoming authentication request.
      */
     public function login(): void
     {
         $this->validate();
+
+        if (! Turnstile::verify($this->turnstileToken, request()->ip())) {
+            throw ValidationException::withMessages([
+                'turnstileToken' => __('Please complete the verification challenge.'),
+            ]);
+        }
 
         $this->form->authenticate();
 
@@ -52,6 +62,8 @@ new #[Layout('layouts.guest')] class extends Component
 
             <x-input-error :messages="$errors->get('form.password')" class="mt-2" />
         </div>
+
+        <x-turnstile model="turnstileToken" />
 
         <!-- Remember Me -->
         <div class="block mt-4">

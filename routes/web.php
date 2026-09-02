@@ -9,12 +9,18 @@ use App\Http\Middleware\EnsureUserIsAdmin;
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/tickets/create', [TicketController::class, 'create'])->name('tickets.create');
-    Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
+    Route::post('/tickets', [TicketController::class, 'store'])
+        ->middleware('throttle:30,1')
+        ->name('tickets.store');
     Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index');
     Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
     Route::patch('/tickets/{ticket}', [TicketController::class, 'update'])->name('tickets.update');
-    Route::patch('/tickets/{ticket}/priority', [TicketController::class, 'updatePriority'])->name('tickets.update-priority');
-    Route::post('/tickets/{ticket}/comments', [CommentController::class, 'store'])->name('comments.store');
+    Route::patch('/tickets/{ticket}/priority', [TicketController::class, 'updatePriority'])
+        ->middleware('throttle:60,1')
+        ->name('tickets.update-priority');
+    Route::post('/tickets/{ticket}/comments', [CommentController::class, 'store'])
+        ->middleware('throttle:60,1')
+        ->name('comments.store');
 });
 
 Route::get('/access-denied', function () {

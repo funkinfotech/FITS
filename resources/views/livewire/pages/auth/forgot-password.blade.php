@@ -1,12 +1,16 @@
 <?php
 
+use App\Support\Turnstile;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
 
 new #[Layout('layouts.guest')] class extends Component
 {
     public string $email = '';
+
+    public string $turnstileToken = '';
 
     /**
      * Send a password reset link to the provided email address.
@@ -16,6 +20,12 @@ new #[Layout('layouts.guest')] class extends Component
         $this->validate([
             'email' => ['required', 'string', 'email'],
         ]);
+
+        if (! Turnstile::verify($this->turnstileToken, request()->ip())) {
+            throw ValidationException::withMessages([
+                'turnstileToken' => __('Please complete the verification challenge.'),
+            ]);
+        }
 
         // We will send the password reset link to this user. Once we have attempted
         // to send the link, we will examine the response then see the message we
@@ -51,6 +61,8 @@ new #[Layout('layouts.guest')] class extends Component
             <x-text-input wire:model="email" id="email" class="block mt-1 w-full" type="email" name="email" required autofocus />
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
+
+        <x-turnstile model="turnstileToken" />
 
         <div class="flex items-center justify-end mt-4">
             <x-primary-button>

@@ -20,11 +20,6 @@
                    class="px-6 py-3 bg-primary text-white rounded shadow hover:bg-opacity-90 transition">
                     Login
                 </a>
-
-                <a href="{{ route('register') }}"
-                   class="px-6 py-3 border border-primary text-primary rounded hover:bg-primary hover:text-white transition">
-                    Register
-                </a>
             </div>
         </div>
     </div>
