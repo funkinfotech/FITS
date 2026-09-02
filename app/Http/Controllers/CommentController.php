@@ -12,7 +12,7 @@ class CommentController extends Controller
         $this->authorize('view', $ticket);
 
         $request->validate([
-            'content' => 'required|string',
+            'content' => 'required|string|max:5000',
         ]);
 
         $ticket->comments()->create([

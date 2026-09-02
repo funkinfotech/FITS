@@ -14,6 +14,13 @@ return [
     |
     */
 
+    'turnstile' => [
+        // Cloudflare Turnstile bot / brute-force protection for public auth forms.
+        // Leave the keys empty to disable the check (e.g. local dev, CI).
+        'site_key' => env('TURNSTILE_SITE_KEY'),
+        'secret_key' => env('TURNSTILE_SECRET_KEY'),
+    ],
+
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
     ],
