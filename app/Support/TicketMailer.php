@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Mail\TicketAutoReplyMail;
 use App\Mail\TicketCreatedMail;
 use App\Mail\TicketReplyMail;
 use App\Models\Comment;
@@ -24,5 +25,14 @@ class TicketMailer
         }
 
         Mail::to($ticket->contact->email)->queue(new TicketCreatedMail($ticket));
+    }
+
+    public static function sendAutoReply(Ticket $ticket): void
+    {
+        if (! $ticket->contact) {
+            return;
+        }
+
+        Mail::to($ticket->contact->email)->queue(new TicketAutoReplyMail($ticket));
     }
 }

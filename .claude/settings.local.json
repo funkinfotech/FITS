@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php artisan *)",
+      "Bash(php -l app/Filament/Resources/TicketResource.php)",
+      "Bash(php -l app/Filament/Resources/TicketResource/Pages/ListTickets.php)",
+      "Bash(grep -B5 \"^\\\\-\\\\-$\\\\|Column::make\")",
+      "Bash(awk '/->columns\\\\\\(\\\\[/,/\\\\]\\\\\\)\\\\s*$/' /var/www/support.funkinfotech.com/app/Filament/Resources/TicketResource.php)",
+      "Bash(sudo chown -R www-data:www-data /var/www/support.funkinfotech.com)"
+    ]
+  }
+}

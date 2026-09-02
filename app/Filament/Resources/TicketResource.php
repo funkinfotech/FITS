@@ -8,7 +8,6 @@ use App\Filament\Resources\TicketResource\RelationManagers\TicketCommentsRelatio
 use App\Filament\Resources\TicketResource\Pages\ListTickets;
 use App\Filament\Resources\TicketResource\Pages\CreateTicket;
 use App\Filament\Resources\TicketResource\Pages\EditTicket;
-use App\Filament\Resources\TicketResource\Pages\ViewTicket;
 use App\Models\Ticket;
 use App\Models\Contact;
 use App\Enums\TicketStatus;
@@ -31,7 +30,6 @@ use Filament\Tables\Filters\Filter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Tables\Actions\EditAction;
-use Filament\Tables\Actions\ViewAction;
 use App\Models\User;
 
 
@@ -195,7 +193,7 @@ class TicketResource extends Resource
                 TextColumn::make('assignedTo.name')
                     ->label('Assigned To')
                     ->badge()
-                    ->color(fn ($state) => $state ? 'success' : 'danger')
+                    ->color(fn ($state) => $state ? 'info' : 'danger')
                     ->default('Unassigned')
                     ->sortable(),
 
@@ -213,7 +211,8 @@ class TicketResource extends Resource
 
                 BadgeColumn::make('source')
                     ->label('Source')
-                    ->color(fn (string $state): string => $state === 'email' ? 'info' : 'gray')
+                    ->sortable()
+                    ->color(fn (string $state): string => $state === 'email' ? 'info' : 'success')
                     ->formatStateUsing(fn (string $state): string => ucfirst($state)),
 
                 TextColumn::make('created_at')
@@ -260,8 +259,8 @@ class TicketResource extends Resource
                     ->toggle()
                     ->query(fn (Builder $query) => $query->whereNull('assigned_to')),
             ])
+            ->recordUrl(fn (Ticket $record): string => static::getUrl('edit', ['record' => $record]))
             ->actions([
-                ViewAction::make(),
                 EditAction::make(),
             ])
             ->bulkActions([
@@ -288,8 +287,7 @@ class TicketResource extends Resource
         return [
             'index' => Pages\ListTickets::route('/'),
             'create' => Pages\CreateTicket::route('/create'),
-            'edit' => Pages\EditTicket::route('/{record}/edit'),
-            'view' => ViewTicket::route('/{record}'),
+            'edit' => Pages\EditTicket::route('/{record}'),
         ];
     }
 

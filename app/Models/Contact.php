@@ -37,4 +37,9 @@ class Contact extends Model
         return $this->emails->firstWhere('is_primary', true)?->email
             ?? $this->emails->first()?->email;
     }
+
+    public function getFirstNameAttribute(): string
+    {
+        return trim(strtok($this->name, ' ')) ?: $this->name;
+    }
 }

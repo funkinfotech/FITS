@@ -27,4 +27,24 @@ class Company extends Model
     {
         return $this->hasMany(Contact::class);
     }
+
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    public function recurringCharges()
+    {
+        return $this->hasMany(RecurringCharge::class);
+    }
+
+    /**
+     * Sum of Sent/Overdue invoice totals — what this company currently owes.
+     */
+    public function getBalanceOwedAttribute(): string
+    {
+        return (string) $this->invoices()
+            ->whereIn('status', [\App\Enums\InvoiceStatus::Sent, \App\Enums\InvoiceStatus::Overdue])
+            ->sum('total');
+    }
 }

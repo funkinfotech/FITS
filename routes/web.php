@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\InvoiceDownloadController;
+use App\Http\Middleware\EnsureUserIsAdmin;
 
 
 Route::middleware(['auth'])->group(function () {
@@ -22,6 +24,10 @@ Route::get('/access-denied', function () {
 Route::get('/tickets/{ticket}/guest-view', [TicketController::class, 'guestShow'])
     ->middleware('signed')
     ->name('tickets.guest-view');
+
+Route::get('/admin/invoices/{invoice}/download', [InvoiceDownloadController::class, 'show'])
+    ->middleware(['auth', EnsureUserIsAdmin::class])
+    ->name('invoices.download');
 
 //Route::view('/', 'welcome');
 Route::get('/', function () {

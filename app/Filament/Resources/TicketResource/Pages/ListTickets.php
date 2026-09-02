@@ -24,9 +24,18 @@ class ListTickets extends ListRecords
         ];
     }
 
+    public function getDefaultActiveTab(): string
+    {
+        return 'active';
+    }
+
     public function getTabs(): array
     {
         return [
+            'active' => Tab::make('Active')
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', '!=', TicketStatus::Closed))
+                ->badge(TicketResource::getModel()::where('status', '!=', TicketStatus::Closed)->count()),
+
             'all' => Tab::make('All')
                 ->badge(TicketResource::getModel()::count()),
 

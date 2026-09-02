@@ -52,7 +52,7 @@ class NeedsAttentionTicketsWidget extends TableWidget
             ])
             ->actions([
                 Tables\Actions\Action::make('view')
-                    ->url(fn (Ticket $record) => route('filament.admin.resources.tickets.view', $record))
+                    ->url(fn (Ticket $record) => route('filament.admin.resources.tickets.edit', $record))
                     ->icon('heroicon-o-eye'),
             ])
             ->paginated(false);

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\CompanyResource\Pages;
+use App\Filament\Resources\CompanyResource\RelationManagers\RecurringChargesRelationManager;
 use App\Filament\Resources\CompanyResource\RelationManagers\UsersRelationManager;
 use App\Models\Company;
 use Filament\Forms;
@@ -104,6 +105,11 @@ class CompanyResource extends Resource
                     ->counts('tickets')
                     ->sortable(),
 
+                TextColumn::make('balance_owed')
+                    ->label('Balance Owed')
+                    ->money('usd')
+                    ->color(fn ($state) => (float) $state > 0 ? 'danger' : 'gray'),
+
                 TextColumn::make('created_at')
                     ->label('Created')
                     ->dateTime()
@@ -125,6 +131,7 @@ class CompanyResource extends Resource
     {
         return [
             UsersRelationManager::class,
+            RecurringChargesRelationManager::class,
         ];
     }
 
