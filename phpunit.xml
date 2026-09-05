@@ -28,5 +28,10 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
+        <!-- Blank disables the Cloudflare Turnstile check (see App\Support\Turnstile::enabled()),
+             so the test suite doesn't depend on real keys/network calls. Tests that specifically
+             exercise Turnstile enable it explicitly via Config::set(). -->
+        <env name="TURNSTILE_SITE_KEY" value=""/>
+        <env name="TURNSTILE_SECRET_KEY" value=""/>
     </php>
 </phpunit>
