@@ -8,7 +8,6 @@ enum InvoiceStatus: string
     case Sent = 'Sent';
     case Overdue = 'Overdue';
     case Paid = 'Paid';
-    case RolledOver = 'Rolled Over';
     case Void = 'Void';
 
     public function filamentColor(): string
@@ -18,7 +17,6 @@ enum InvoiceStatus: string
             self::Sent => 'info',
             self::Overdue => 'danger',
             self::Paid => 'success',
-            self::RolledOver => 'warning',
             self::Void => 'danger',
         };
     }

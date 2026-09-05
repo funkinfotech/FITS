@@ -156,6 +156,16 @@
             <td colspan="3" style="text-align: right;">Total</td>
             <td class="amount-col">${{ number_format($invoice->total, 2) }}</td>
         </tr>
+        @if ($invoice->previous_balance > 0)
+            <tr>
+                <td colspan="3" class="muted" style="text-align: right;">Previous Balance (other open invoices)</td>
+                <td class="amount-col muted">${{ number_format($invoice->previous_balance, 2) }}</td>
+            </tr>
+            <tr class="total-row">
+                <td colspan="3" style="text-align: right;">Total Account Balance Due</td>
+                <td class="amount-col">${{ number_format($invoice->total_balance_due, 2) }}</td>
+            </tr>
+        @endif
     </tbody>
 </table>
 

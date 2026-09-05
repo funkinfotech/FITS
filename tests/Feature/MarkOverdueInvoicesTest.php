@@ -58,13 +58,11 @@ class MarkOverdueInvoicesTest extends TestCase
         $paid = $this->makeInvoice(InvoiceStatus::Paid, '2026-08-01');
         $void = $this->makeInvoice(InvoiceStatus::Void, '2026-08-01');
         $draft = $this->makeInvoice(InvoiceStatus::Draft, '2026-08-01');
-        $rolledOver = $this->makeInvoice(InvoiceStatus::RolledOver, '2026-08-01');
 
         $this->artisan('invoices:mark-overdue');
 
         $this->assertSame(InvoiceStatus::Paid, $paid->fresh()->status);
         $this->assertSame(InvoiceStatus::Void, $void->fresh()->status);
         $this->assertSame(InvoiceStatus::Draft, $draft->fresh()->status);
-        $this->assertSame(InvoiceStatus::RolledOver, $rolledOver->fresh()->status);
     }
 }

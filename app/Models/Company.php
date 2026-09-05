@@ -43,8 +43,8 @@ class Company extends Model
      */
     public function getBalanceOwedAttribute(): string
     {
-        return (string) $this->invoices()
+        return number_format((float) $this->invoices()
             ->whereIn('status', [\App\Enums\InvoiceStatus::Sent, \App\Enums\InvoiceStatus::Overdue])
-            ->sum('total');
+            ->sum('total'), 2, '.', '');
     }
 }

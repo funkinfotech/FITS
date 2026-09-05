@@ -162,6 +162,11 @@ class InvoiceResource extends Resource
                             collect($get('lineItems') ?? [])->sum(fn ($row) => (float) ($row['amount'] ?? 0)),
                             2
                         )),
+
+                    Placeholder::make('previous_balance_display')
+                        ->label('Previous Balance (other open invoices)')
+                        ->visible(fn (?Invoice $record): bool => $record && (float) $record->previous_balance > 0)
+                        ->content(fn (?Invoice $record): string => $record ? '$' . number_format($record->previous_balance, 2) : '$0.00'),
                 ]),
 
             Section::make('Terms & Notes')

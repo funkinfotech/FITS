@@ -43,9 +43,19 @@
                                 <td style="font-size: 13px; color: #1f2937; text-align: right; padding: 4px 0;">{{ $invoice->issue_date?->format('M j, Y') }}</td>
                             </tr>
                             <tr>
-                                <td style="font-size: 15px; font-weight: 700; color: #052a44; padding: 8px 0 0; border-top: 1px solid #e5e7eb;">Total Due</td>
+                                <td style="font-size: 15px; font-weight: 700; color: #052a44; padding: 8px 0 0; border-top: 1px solid #e5e7eb;">Total Due (this invoice)</td>
                                 <td style="font-size: 15px; font-weight: 700; color: #052a44; text-align: right; padding: 8px 0 0; border-top: 1px solid #e5e7eb;">${{ number_format($invoice->total, 2) }}</td>
                             </tr>
+                            @if ($invoice->previous_balance > 0)
+                                <tr>
+                                    <td style="font-size: 13px; color: #6b7280; padding: 4px 0;">Previous Balance (other open invoices)</td>
+                                    <td style="font-size: 13px; color: #6b7280; text-align: right; padding: 4px 0;">${{ number_format($invoice->previous_balance, 2) }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-size: 15px; font-weight: 700; color: #b91c1c; padding: 4px 0;">Total Account Balance Due</td>
+                                    <td style="font-size: 15px; font-weight: 700; color: #b91c1c; text-align: right; padding: 4px 0;">${{ number_format($invoice->total_balance_due, 2) }}</td>
+                                </tr>
+                            @endif
                         </table>
 
                         <p style="margin: 0; font-size: 13px; color: #6b7280;">The full invoice is attached to this email as a PDF.</p>

@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Enums\InvoiceStatus;
 use App\Models\Invoice;
 use App\Models\RecurringCharge;
 use App\Support\InvoiceMailer;
@@ -13,7 +12,7 @@ class GenerateRecurringInvoices extends Command
 {
     protected $signature = 'invoices:generate-recurring';
 
-    protected $description = 'Generate this cycle\'s invoice for each active recurring charge, rolling forward any unpaid prior balance';
+    protected $description = 'Generate this cycle\'s invoice for each active recurring charge';
 
     public function handle(): int
     {
@@ -26,7 +25,7 @@ class GenerateRecurringInvoices extends Command
             ->chunkById(50, function ($charges) use ($today, &$generated) {
                 foreach ($charges as $charge) {
                     if ($charge->isDue($today)) {
-                        $this->generateFor($charge, $today);
+                        $this->generateFor($charge);
                         $generated++;
                     }
                 }
@@ -37,14 +36,18 @@ class GenerateRecurringInvoices extends Command
         return self::SUCCESS;
     }
 
-    protected function generateFor(RecurringCharge $charge, \Illuminate\Support\Carbon $today): void
+    /**
+     * Each cycle's invoice stands on its own: it only ever bills for that
+     * cycle's charge. Any older unpaid invoices for the company are left
+     * completely untouched — they keep their own due date and status, and
+     * are surfaced to the customer as a "previous balance" line on this
+     * invoice's PDF/email (see Invoice::getPreviousBalanceAttribute()) and
+     * to the admin via the overdue-notification/reminder flow, not by
+     * folding their dollar amount into this invoice.
+     */
+    protected function generateFor(RecurringCharge $charge): void
     {
-        DB::transaction(function () use ($charge, $today) {
-            $unpaidPrior = Invoice::query()
-                ->where('recurring_charge_id', $charge->id)
-                ->whereIn('status', [InvoiceStatus::Sent, InvoiceStatus::Overdue])
-                ->get();
-
+        DB::transaction(function () use ($charge) {
             $invoice = Invoice::create([
                 'company_id' => $charge->company_id,
                 'recurring_charge_id' => $charge->id,
@@ -56,20 +59,6 @@ class GenerateRecurringInvoices extends Command
                 'unit_price' => $charge->amount,
                 'sort' => 0,
             ]);
-
-            foreach ($unpaidPrior as $index => $priorInvoice) {
-                $invoice->lineItems()->create([
-                    'description' => "Previous balance due (Invoice {$priorInvoice->invoice_number})",
-                    'quantity' => 1,
-                    'unit_price' => $priorInvoice->total,
-                    'sort' => $index + 1,
-                ]);
-
-                $priorInvoice->forceFill([
-                    'status' => InvoiceStatus::RolledOver,
-                    'rolled_into_invoice_id' => $invoice->id,
-                ])->saveQuietly();
-            }
 
             $invoice->recalculateTotal()->save();
 

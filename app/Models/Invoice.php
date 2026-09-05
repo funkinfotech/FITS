@@ -88,16 +88,6 @@ class Invoice extends Model
         return $this->belongsTo(RecurringCharge::class);
     }
 
-    public function rolledInto()
-    {
-        return $this->belongsTo(Invoice::class, 'rolled_into_invoice_id');
-    }
-
-    public function rolledFrom()
-    {
-        return $this->hasMany(Invoice::class, 'rolled_into_invoice_id');
-    }
-
     public function lineItems()
     {
         return $this->hasMany(InvoiceLineItem::class)->orderBy('sort');
@@ -110,13 +100,42 @@ class Invoice extends Model
 
     /**
      * Unpaid balance still owed: Sent/Overdue count their full total,
-     * everything else (Draft, Paid, Void, RolledOver) owes nothing.
+     * everything else (Draft, Paid, Void) owes nothing.
      */
     public function getBalanceOwedAttribute(): string
     {
         return in_array($this->status, [InvoiceStatus::Sent, InvoiceStatus::Overdue], true)
             ? (string) $this->total
             : '0.00';
+    }
+
+    /**
+     * What the company still owes on its *other* open invoices, as of now.
+     * This is a read-only summary for display (e.g. "previous balance" on a
+     * new invoice) — it never mutates those invoices. Each invoice remains
+     * an independent record with its own due date and status, so aging and
+     * payment history stay accurate.
+     */
+    public function getPreviousBalanceAttribute(): string
+    {
+        if (! $this->company_id) {
+            return '0.00';
+        }
+
+        return number_format((float) static::query()
+            ->where('company_id', $this->company_id)
+            ->where('id', '!=', $this->id)
+            ->whereIn('status', [InvoiceStatus::Sent, InvoiceStatus::Overdue])
+            ->sum('total'), 2, '.', '');
+    }
+
+    /**
+     * This invoice's own balance plus the company's previous balance —
+     * what the customer would need to pay to bring the account to zero.
+     */
+    public function getTotalBalanceDueAttribute(): string
+    {
+        return number_format((float) $this->balance_owed + (float) $this->previous_balance, 2, '.', '');
     }
 
     public function recalculateTotal(): static
