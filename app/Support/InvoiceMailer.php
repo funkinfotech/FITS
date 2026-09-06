@@ -12,9 +12,11 @@ class InvoiceMailer
 {
     public static function send(Invoice $invoice, iterable $contacts, ?string $customMessage = null): void
     {
-        if (! $invoice->pdf_path) {
-            InvoicePdfGenerator::generate($invoice);
-        }
+        // Always regenerate: the PDF includes a live "previous balance" summary
+        // of the company's other open invoices, which can change between sends
+        // (e.g. an older invoice becomes overdue, or a resend happens after a
+        // new one was created) even though this invoice's own line items didn't.
+        InvoicePdfGenerator::generate($invoice);
 
         foreach ($contacts as $contact) {
             if (! $contact->email) {
@@ -32,9 +34,7 @@ class InvoiceMailer
 
     public static function sendOverdueReminder(Invoice $invoice, iterable $contacts): void
     {
-        if (! $invoice->pdf_path) {
-            InvoicePdfGenerator::generate($invoice);
-        }
+        InvoicePdfGenerator::generate($invoice);
 
         foreach ($contacts as $contact) {
             if (! $contact->email) {
