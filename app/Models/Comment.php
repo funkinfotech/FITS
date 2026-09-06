@@ -19,6 +19,13 @@ class Comment extends Model
         'is_internal' => 'boolean',
     ];
 
+    protected static function booted(): void
+    {
+        static::deleting(function (Comment $comment): void {
+            $comment->attachments()->get()->each->delete();
+        });
+    }
+
     public function ticket()
     {
         return $this->belongsTo(Ticket::class);
@@ -37,5 +44,10 @@ class Comment extends Model
     public function recipients()
     {
         return $this->belongsToMany(Contact::class, 'comment_contact');
+    }
+
+    public function attachments()
+    {
+        return $this->morphMany(Attachment::class, 'attachable')->latest('id');
     }
 }

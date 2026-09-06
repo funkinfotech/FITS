@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\InvoiceDownloadController;
 use App\Http\Middleware\EnsureUserIsAdmin;
 
@@ -21,6 +22,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/tickets/{ticket}/comments', [CommentController::class, 'store'])
         ->middleware('throttle:60,1')
         ->name('comments.store');
+
+    Route::get('/attachments/{attachment}', AttachmentController::class)
+        ->middleware('throttle:240,1')
+        ->name('attachments.show');
 });
 
 Route::get('/access-denied', function () {
@@ -30,6 +35,10 @@ Route::get('/access-denied', function () {
 Route::get('/tickets/{ticket}/guest-view', [TicketController::class, 'guestShow'])
     ->middleware('signed')
     ->name('tickets.guest-view');
+
+Route::get('/tickets/{ticket}/guest-view/attachments/{attachment}', [AttachmentController::class, 'guest'])
+    ->middleware(['signed', 'throttle:240,1'])
+    ->name('attachments.guest-view');
 
 Route::get('/admin/invoices/{invoice}/download', [InvoiceDownloadController::class, 'show'])
     ->middleware(['auth', EnsureUserIsAdmin::class])

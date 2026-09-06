@@ -15,7 +15,6 @@
         ? $ticket->priority
         : TicketPriority::tryFrom($ticket->priority) ?? TicketPriority::Medium;
 
-    $statusEmoji = $ticket->status->emoji();
 @endphp
 
 <div class="max-w-3xl mx-auto pt-12 py-10 px-6">
@@ -29,33 +28,29 @@
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
                 <p class="text-sm text-gray-500">Ticket #{{ $ticket->ticket_number }}</p>
-                <h1 class="text-2xl font-bold text-gray-900">{{ $priority->emoji() }} {{ $ticket->subject }}</h1>
+                <h1 class="text-2xl font-bold text-gray-900">{{ $ticket->subject }}</h1>
                 <p class="mt-1 text-xs text-gray-400">
-                    Opened {{ $ticket->created_at->format('F j, Y g:i A') }} &middot; Updated {{ $ticket->updated_at->diffForHumans() }}
+                    Opened {{ $ticket->created_at->inDisplayTz()->format('F j, Y g:i A') }} &middot; Updated {{ $ticket->updated_at->diffForHumans() }}
                 </p>
             </div>
 
             <div class="flex items-center gap-2">
                 <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold {{ $ticket->status->colorClass() }}">
-                    {{ $statusEmoji }} {{ $ticket->status->value }}
+                    {{ $ticket->status->value }}
                 </span>
 
                 <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold {{ $priority->colorClass() }}">
-                    {{ $priority->emoji() }} {{ $priority->value }}
+                    {{ $priority->value }}
                 </span>
             </div>
         </div>
 
-        <div class="mt-6">
-            <h2 class="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-2">Problem</h2>
-            <div class="bg-gray-50 border rounded-lg px-4 py-3 text-gray-800 text-base whitespace-pre-line leading-relaxed">{{ trim($ticket->message) }}</div>
-        </div>
     </div>
 
     <div class="mt-6">
         <h3 class="text-lg font-semibold mb-4">&#128172; Conversation</h3>
 
-        @forelse ($ticket->comments as $comment)
+        @foreach ($ticket->comments as $comment)
             <div class="bg-white rounded-lg shadow-sm p-4 mb-4 border">
                 <div class="flex items-center justify-between">
                     <div class="font-medium text-gray-800">
@@ -68,10 +63,24 @@
                 <div class="mt-2 text-gray-700 whitespace-pre-line">
                     {{ $comment->content }}
                 </div>
+                <x-attachments :items="$comment->attachments" :guest-ticket="$ticket" />
             </div>
-        @empty
-            <p class="text-sm text-gray-500">No comments yet.</p>
-        @endforelse
+        @endforeach
+
+        {{-- Original message — start of the thread --}}
+        <div class="rounded-lg border border-l-4 border-gray-200 border-l-primary-300 bg-gray-50 p-4">
+            <div class="flex items-center justify-between gap-2">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="font-medium text-gray-800">{{ $ticket->name ?: 'Customer' }}</span>
+                    <span class="rounded-full bg-gray-200 px-2 py-0.5 text-xs font-semibold text-gray-600">Original message</span>
+                </div>
+                <span class="shrink-0 text-sm text-gray-500" title="{{ $ticket->created_at->inDisplayTz()->format('F j, Y g:i A') }}">
+                    {{ $ticket->created_at->diffForHumans() }}
+                </span>
+            </div>
+            <div class="mt-2 text-gray-800 whitespace-pre-line leading-relaxed">{{ trim($ticket->message) }}</div>
+            <x-attachments :items="$ticket->attachments" :guest-ticket="$ticket" />
+        </div>
     </div>
 
     <p class="mt-4 text-sm text-gray-500">

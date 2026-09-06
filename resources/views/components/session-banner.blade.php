@@ -1,20 +1,26 @@
 @php
     $success = session('success');
     $error = session('error');
+    $warning = session('warning');
 @endphp
 
-@if ($success || $error)
+@if ($success || $error || $warning)
     <div
         x-data="{ show: true }"
         x-show="show"
-        x-init="setTimeout(() => show = false, 5000)"
+        x-init="setTimeout(() => show = false, {{ $warning ? 12000 : 5000 }})"
         x-transition:leave="transition ease-in duration-300"
         x-transition:leave-start="opacity-100"
         x-transition:leave-end="opacity-0"
         class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6"
     >
         <div
-            class="flex items-start gap-3 rounded-lg border px-4 py-3 shadow-sm {{ $success ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800' }}"
+            @class([
+                'flex items-start gap-3 rounded-lg border px-4 py-3 shadow-sm',
+                'bg-green-50 border-green-200 text-green-800' => $success,
+                'bg-red-50 border-red-200 text-red-800' => $error && ! $success,
+                'bg-amber-50 border-amber-200 text-amber-800' => $warning && ! $success && ! $error,
+            ])
             role="alert"
         >
             @if ($success)
@@ -27,7 +33,7 @@
                 </svg>
             @endif
 
-            <p class="text-sm font-medium">{{ $success ?? $error }}</p>
+            <p class="text-sm font-medium">{{ $success ?? $error ?? $warning }}</p>
 
             <button type="button" @click="show = false" class="ms-auto shrink-0 text-current opacity-60 hover:opacity-100">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">

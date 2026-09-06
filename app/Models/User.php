@@ -24,10 +24,12 @@ class User extends Authenticatable
         'is_admin',
         'company_id',
         'contact_id',
+        'navigation_preferences',
     ];
 
     protected $casts = [
         'is_admin' => 'boolean',
+        'navigation_preferences' => 'array',
     ];
 
     /**

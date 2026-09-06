@@ -68,6 +68,12 @@ return [
     'timezone' => 'UTC',
 
     /*
+    | Timestamps are stored in UTC; this is the timezone they are shown in.
+    | (See the Carbon::inDisplayTz() macro in AppServiceProvider.)
+    */
+    'display_timezone' => env('APP_DISPLAY_TIMEZONE', 'America/New_York'),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------

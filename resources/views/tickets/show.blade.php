@@ -1,7 +1,6 @@
 @extends('layouts.app')
 
 @php
-
     use App\Enums\TicketPriority;
     use App\Enums\TicketStatus;
 
@@ -9,7 +8,6 @@
         ? $ticket->priority
         : TicketPriority::tryFrom($ticket->priority) ?? TicketPriority::Medium;
 
-    $statusEmoji = $ticket->status->emoji();
     $hasTicketErrors = $errors->hasAny(['subject', 'message']);
 @endphp
 
@@ -21,19 +19,20 @@
         &larr; Back to dashboard
     </a>
 
+    {{-- Ticket header --}}
     <div class="mt-4 bg-white shadow-md rounded-lg p-6 sm:p-8">
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
                 <p class="text-sm text-gray-500">Ticket #{{ $ticket->ticket_number }}</p>
-                <h1 class="text-2xl font-bold text-gray-900">{{ $priority->emoji() }} {{ $ticket->subject }}</h1>
+                <h1 class="text-2xl font-bold text-gray-900">{{ $ticket->subject }}</h1>
                 <p class="mt-1 text-xs text-gray-400">
-                    Opened {{ $ticket->created_at->format('F j, Y g:i A') }} &middot; Updated {{ $ticket->updated_at->diffForHumans() }}
+                    Opened {{ $ticket->created_at->inDisplayTz()->format('F j, Y g:i A') }} &middot; Updated {{ $ticket->updated_at->diffForHumans() }}
                 </p>
             </div>
 
             <div class="flex items-center gap-2">
                 <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold {{ $ticket->status->colorClass() }}">
-                    {{ $statusEmoji }} {{ $ticket->status->value }}
+                    {{ $ticket->status->value }}
                 </span>
 
                 <div x-data="{ editingPriority: false }">
@@ -43,7 +42,7 @@
                             @click="editingPriority = true"
                             class="inline-block px-3 py-1 rounded-full text-sm font-semibold {{ $priority->colorClass() }}"
                         >
-                            {{ $priority->emoji() }} {{ $priority->value }}
+                            {{ $priority->value }}
                         </button>
                     </template>
 
@@ -64,7 +63,7 @@
                                         value="{{ $priorityOption->value }}"
                                         @selected($priority->value === $priorityOption->value)
                                     >
-                                        {{ $priorityOption->emoji() }} {{ $priorityOption->value }}
+                                        {{ $priorityOption->value }}
                                     </option>
                                 @endforeach
                             </select>
@@ -73,23 +72,92 @@
                 </div>
             </div>
         </div>
+    </div>
 
-        {{-- Problem description --}}
-        <div class="mt-6" x-data="{ editing: {{ $hasTicketErrors ? 'true' : 'false' }} }">
-            <div class="flex items-center justify-between mb-2">
-                <h2 class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Problem</h2>
+    {{-- Reply — right under the header, above the thread --}}
+    <div class="mt-6 bg-white shadow-md rounded-lg p-6 sm:p-8">
+        <h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-3">Add a Reply</h3>
+        <form method="POST" action="{{ route('comments.store', $ticket) }}" enctype="multipart/form-data" class="space-y-3">
+            @csrf
+            <div>
+                <textarea
+                    name="content" rows="3" required placeholder="Write a reply..."
+                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                >{{ old('content') }}</textarea>
+                <x-input-error :messages="$errors->get('content')" class="mt-1" />
+            </div>
 
-                <button type="button" x-show="!editing" @click="editing = true" class="text-sm font-medium text-primary-600 hover:underline">
-                    Edit
-                </button>
+            <x-attachment-input />
+
+            <x-primary-button>Submit</x-primary-button>
+        </form>
+    </div>
+
+    {{-- Conversation: newest first, original message last --}}
+    <div class="mt-6">
+        <h3 class="text-lg font-semibold mb-4">&#128172; Conversation</h3>
+
+        @foreach ($ticket->comments as $comment)
+            @php
+                $isNew = isset($lastViewedAt)
+                    && $lastViewedAt !== null
+                    && $comment->created_at->gt($lastViewedAt)
+                    && $comment->user_id !== Auth::id();
+            @endphp
+            <div @class([
+                'rounded-lg shadow-sm p-4 mb-4 border',
+                'bg-white' => ! $isNew,
+                'bg-primary-50 border-primary-200' => $isNew,
+            ])>
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="font-medium text-gray-800">
+                            {{ $comment->user->name ?? $comment->contact->name ?? 'Guest' }}
+                        </span>
+                        @if ($isNew)
+                            <span class="rounded-full bg-primary-600 px-2 py-0.5 text-xs font-semibold text-white">New</span>
+                        @endif
+                    </div>
+                    <div class="shrink-0 text-sm text-gray-500" title="{{ $comment->created_at->inDisplayTz()->format('F j, Y g:i A') }}">
+                        {{ $comment->created_at->diffForHumans() }}
+                    </div>
+                </div>
+                <div class="mt-2 text-gray-700 whitespace-pre-line">
+                    {{ $comment->content }}
+                </div>
+                <x-attachments :items="$comment->attachments" />
+            </div>
+        @endforeach
+
+        {{-- The original message — start of the thread --}}
+        <div
+            class="rounded-lg border border-l-4 border-gray-200 border-l-primary-300 bg-gray-50 p-4"
+            x-data="{ editing: {{ $hasTicketErrors ? 'true' : 'false' }} }"
+        >
+            <div class="flex items-center justify-between gap-2">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="font-medium text-gray-800">{{ $ticket->name ?: 'You' }}</span>
+                    <span class="rounded-full bg-gray-200 px-2 py-0.5 text-xs font-semibold text-gray-600">Original message</span>
+                </div>
+                <div class="flex shrink-0 items-center gap-3">
+                    <span class="text-sm text-gray-500" title="{{ $ticket->created_at->inDisplayTz()->format('F j, Y g:i A') }}">
+                        {{ $ticket->created_at->diffForHumans() }}
+                    </span>
+                    <button type="button" x-show="!editing" @click="editing = true" class="text-xs font-medium text-primary-600 hover:underline">
+                        Edit
+                    </button>
+                </div>
             </div>
 
             <template x-if="!editing">
-                <div class="bg-gray-50 border rounded-lg px-4 py-3 text-gray-800 text-base whitespace-pre-line leading-relaxed">{{ trim($ticket->message) }}</div>
+                <div>
+                    <div class="mt-2 text-gray-800 whitespace-pre-line leading-relaxed">{{ trim($ticket->message) }}</div>
+                    <x-attachments :items="$ticket->attachments" />
+                </div>
             </template>
 
             <template x-if="editing">
-                <form method="POST" action="{{ route('tickets.update', $ticket) }}" class="space-y-4">
+                <form method="POST" action="{{ route('tickets.update', $ticket) }}" class="mt-3 space-y-4">
                     @csrf
                     @method('PATCH')
 
@@ -121,43 +189,6 @@
                 </form>
             </template>
         </div>
-    </div>
-
-    {{-- Reply --}}
-    <div class="mt-6 bg-white shadow-md rounded-lg p-6 sm:p-8">
-        <h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-3">Add a Reply</h3>
-        <form method="POST" action="{{ route('comments.store', $ticket) }}">
-            @csrf
-            <textarea
-                name="content" rows="3" required placeholder="Write a reply..."
-                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            >{{ old('content') }}</textarea>
-            <x-input-error :messages="$errors->get('content')" class="mt-1" />
-            <x-primary-button class="mt-2">Submit</x-primary-button>
-        </form>
-    </div>
-
-    {{-- Comments, newest first --}}
-    <div class="mt-6">
-        <h3 class="text-lg font-semibold mb-4">&#128172; Conversation</h3>
-
-        @forelse ($ticket->comments as $comment)
-            <div class="bg-white rounded-lg shadow-sm p-4 mb-4 border">
-                <div class="flex items-center justify-between">
-                    <div class="font-medium text-gray-800">
-                        {{ $comment->user->name ?? $comment->contact->name ?? 'Guest' }}
-                    </div>
-                    <div class="text-sm text-gray-500">
-                        {{ $comment->created_at->diffForHumans() }}
-                    </div>
-                </div>
-                <div class="mt-2 text-gray-700 whitespace-pre-line">
-                    {{ $comment->content }}
-                </div>
-            </div>
-        @empty
-            <p class="text-sm text-gray-500">No comments yet.</p>
-        @endforelse
     </div>
 
 </div>

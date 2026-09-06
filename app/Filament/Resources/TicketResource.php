@@ -20,6 +20,12 @@ use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Group;
+use Filament\Forms\Components\Grid;
+use Illuminate\Support\HtmlString;
+use Illuminate\Support\Js;
+use Closure;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -58,6 +64,157 @@ class TicketResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
+            Group::make(static::createFormSchema())
+                ->visibleOn('create')
+                ->columnSpanFull(),
+
+            Group::make(static::workFormSchema())
+                ->visibleOn('edit')
+                ->columnSpanFull(),
+        ]);
+    }
+
+    /**
+     * Fields shown when an agent opens an existing ticket: just the editable
+     * attribute row. Subject is edited in the page heading; the message and all
+     * replies live in the Conversation panel below.
+     */
+    protected static function workFormSchema(): array
+    {
+        return [
+            // The subject is edited inline in the page heading; keep it in the
+            // form so validation and the autosave in EditTicket cover it.
+            Hidden::make('subject')->required(),
+
+            // Editable attributes: each renders as a link showing the current
+            // value and swaps to a searchable dropdown when clicked.
+            Grid::make(['default' => 1, 'sm' => 2, 'xl' => 3])
+                ->schema([
+                    static::inlineAttribute(
+                        'status',
+                        'Status',
+                        fn (Ticket $record): string => $record->status?->value ?? '—',
+                        fn (Select $select): Select => $select
+                            ->required()
+                            ->options(collect(TicketStatus::cases())
+                                ->mapWithKeys(fn ($case) => [$case->value => $case->value]))
+                            ->selectablePlaceholder(false),
+                    ),
+
+                    static::inlineAttribute(
+                        'priority',
+                        'Priority',
+                        fn (Ticket $record): string => $record->priority?->value ?? '—',
+                        fn (Select $select): Select => $select
+                            ->required()
+                            ->options(collect(TicketPriority::cases())
+                                ->mapWithKeys(fn ($case) => [$case->value => $case->value]))
+                            ->selectablePlaceholder(false),
+                    ),
+
+                    static::inlineAttribute(
+                        'assigned_to',
+                        'Assigned to',
+                        fn (Ticket $record): string => $record->assignedTo?->name ?? 'Unassigned',
+                        fn (Select $select): Select => $select
+                            ->options(fn () => User::where('is_admin', true)->pluck('name', 'id'))
+                            ->placeholder('Unassigned'),
+                    ),
+
+                    static::inlineAttribute(
+                        'company_id',
+                        'Company',
+                        fn (Ticket $record): string => $record->company?->name ?? 'None',
+                        fn (Select $select): Select => $select
+                            ->relationship('company', 'name')
+                            ->preload()
+                            ->placeholder('None')
+                            ->afterStateUpdated(fn (Set $set) => $set('contact_id', null)),
+                    ),
+
+                    static::inlineAttribute(
+                        'contact_id',
+                        'Contact',
+                        fn (Ticket $record): string => $record->contact?->name ?? 'None',
+                        fn (Select $select): Select => $select
+                            ->options(fn (Get $get): array => Contact::where('company_id', $get('company_id'))
+                                ->pluck('name', 'id')
+                                ->toArray())
+                            ->placeholder('None'),
+                    ),
+                ]),
+
+            // The customer's original message is rendered as the last (oldest)
+            // entry in the Conversation panel, not here — see
+            // TicketCommentsRelationManager.
+        ];
+    }
+
+    /**
+     * One editable ticket attribute. Renders the current value as a link; a
+     * click swaps it for a searchable {@see Select} (opened, ready to filter)
+     * that autosaves on change and collapses back to the link afterwards.
+     *
+     * @param  Closure(Ticket): string  $displayUsing
+     * @param  Closure(Select): Select  $configureSelect
+     */
+    protected static function inlineAttribute(string $name, string $label, Closure $displayUsing, Closure $configureSelect): Group
+    {
+        $event = 'ticket-reveal-' . str_replace('_', '-', $name);
+
+        $select = $configureSelect(
+            Select::make($name)
+                ->hiddenLabel()
+                ->native(false)
+                ->searchable()
+                ->live()
+                ->extraFieldWrapperAttributes(['x-show' => 'editing'])
+                ->extraAlpineAttributes(['x-on:' . $event . '.window' => 'select?.showDropdown?.()'])
+        );
+
+        $select->afterStateUpdated(fn ($livewire) => static::autosave($livewire));
+
+        return Group::make([
+            Placeholder::make($name . '_link')
+                ->label($label)
+                ->hiddenLabel()
+                ->content(fn (Ticket $record): HtmlString => new HtmlString(
+                    '<span class="ticket-attr__label">' . e($label) . '</span>'
+                    . '<span class="ticket-attr__value">' . e($displayUsing($record)) . '</span>'
+                ))
+                ->extraAttributes([
+                    'x-show' => '! editing',
+                    'x-on:click' => 'reveal()',
+                    'x-on:keydown.enter' => 'reveal()',
+                    'role' => 'button',
+                    'tabindex' => '0',
+                    'class' => 'ticket-attr',
+                ]),
+
+            $select,
+        ])->extraAttributes([
+            'x-data' => '{ editing: false, reveal() { this.editing = true; this.$nextTick(() => this.$dispatch(' . Js::from($event) . ')) } }',
+            'x-on:ticket-autosaved.window' => 'editing = false',
+            'x-on:click.outside' => 'editing = false',
+            'x-on:keydown.escape' => 'editing = false',
+            'class' => 'ticket-attr__group',
+        ]);
+    }
+
+    /**
+     * Commit the current form state straight away. Used by every field on the
+     * edit screen so there is no "Save changes" step.
+     */
+    protected static function autosave($livewire): void
+    {
+        if (method_exists($livewire, 'autosave')) {
+            $livewire->autosave();
+        }
+    }
+
+    protected static function createFormSchema(): array
+    {
+        return [
 
             Select::make('company_id')
                 ->label('Company')
@@ -149,7 +306,22 @@ class TicketResource extends Resource
                 ->placeholder('Unassigned'),
 
             Textarea::make('message')->required()->rows(6),
-            ]);
+
+            \Filament\Forms\Components\FileUpload::make('attachments')
+                ->label('Attachments')
+                ->multiple()
+                ->storeFiles(false)
+                ->openable()
+                ->reorderable(false)
+                ->maxFiles(config('attachments.max_files'))
+                ->maxSize(config('attachments.max_size_kb'))
+                ->acceptedFileTypes(collect(config('attachments.allowed'))
+                    ->flatten()
+                    ->reject(fn (string $mime): bool => $mime === 'application/octet-stream')
+                    ->unique()->values()->all())
+                ->helperText('Images, PDF, Office documents, text/logs or .zip — sanitised on upload.')
+                ->columnSpanFull(),
+        ];
     }
 
     public static function table(Table $table): Table
@@ -261,7 +433,9 @@ class TicketResource extends Resource
             ])
             ->recordUrl(fn (Ticket $record): string => static::getUrl('edit', ['record' => $record]))
             ->actions([
-                EditAction::make(),
+                EditAction::make()
+                    ->label('Open')
+                    ->icon('heroicon-m-arrow-top-right-on-square'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

@@ -7,6 +7,7 @@ use App\Enums\TicketStatus;
 use App\Models\Comment;
 use App\Models\Contact;
 use App\Models\Ticket;
+use App\Support\BrevoInboundAttachments;
 use App\Support\TicketMailer;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -53,13 +54,15 @@ class ProcessInboundEmailJob implements ShouldQueue
                 $ticket = Ticket::where('ticket_number', $matches[1])->first();
 
                 if ($ticket) {
-                    $ticket->comments()->create([
+                    $comment = $ticket->comments()->create([
                         'user_id' => null,
                         'contact_id' => $contact?->id,
                         'content' => $body,
                         'is_internal' => false,
                         'inbound_message_id' => $messageId,
                     ]);
+
+                    BrevoInboundAttachments::importInto($comment, $this->item, $contact);
 
                     return;
                 }
@@ -78,6 +81,8 @@ class ProcessInboundEmailJob implements ShouldQueue
                 'inbound_message_id' => $messageId,
                 'source' => 'email',
             ]);
+
+            BrevoInboundAttachments::importInto($ticket, $this->item, $contact);
 
             if ($contact) {
                 TicketMailer::sendAutoReply($ticket);
