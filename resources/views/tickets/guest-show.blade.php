@@ -20,7 +20,7 @@
 <div class="max-w-3xl mx-auto pt-12 py-10 px-6">
 
     <a href="/" class="inline-flex items-center gap-2 mb-6 text-gray-800 hover:text-gray-900">
-        <img src="{{ asset('images/funkit-logo.png') }}" alt="FunkIT" class="w-8 h-8">
+        <img src="{{ asset('images/funkit-logo.png') . '?v=2' }}" alt="FunkIT" class="w-8 h-8">
         <span class="font-semibold">FunkIT HelpDesk</span>
     </a>
 

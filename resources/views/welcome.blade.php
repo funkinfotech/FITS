@@ -10,7 +10,7 @@
 
     <div class="min-h-screen flex items-center justify-center bg-gray-50 px-6">
         <div class="max-w-2xl w-full text-center">
-            <img src="{{ asset('images/funkit-logo.png') }}" alt="FunkIT Logo" class="mx-auto w-24 h-24 mb-6">
+            <img src="{{ asset('images/funkit-logo.png') . '?v=2' }}" alt="FunkIT Logo" class="mx-auto w-24 h-24 mb-6">
 
             <h1 class="text-4xl font-bold text-primary mb-4">Welcome to FunkIT HelpDesk</h1>
             <p class="text-gray-600 text-lg mb-8">{{ $tagline }}</p>

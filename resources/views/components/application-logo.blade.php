@@ -1,1 +1,1 @@
-<img src="{{ asset('images/funkit-logo.png') }}" alt="FunkIT Logo" class="h-10">
+<img src="{{ asset('images/funkit-logo.png') . '?v=2' }}" alt="FunkIT Logo" class="h-10">

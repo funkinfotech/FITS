@@ -37,7 +37,7 @@ class AdminPanelProvider extends PanelProvider
     {
         return $panel
             ->brandName('FunkIT HelpDesk')
-            ->brandLogo(asset('images/funkit-logo.png'))
+            ->brandLogo(asset('images/funkit-logo.png') . '?v=2')
             ->default()
             ->id('admin')
             ->path('admin')

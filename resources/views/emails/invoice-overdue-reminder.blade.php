@@ -15,7 +15,7 @@
                 <tr>
                     <td style="padding-bottom: 20px;">
                         <a href="{{ url('/') }}" style="text-decoration: none;">
-                            <img src="{{ asset('images/funkit-logo.png') }}" alt="{{ $invoice->from_business_name }}" width="28" height="28" style="vertical-align: middle; border-radius: 6px;">
+                            <img src="{{ asset('images/funkit-logo.png') . '?v=2' }}" alt="{{ $invoice->from_business_name }}" width="28" height="28" style="vertical-align: middle; border-radius: 6px;">
                             <span style="vertical-align: middle; margin-left: 8px; font-size: 15px; font-weight: 600; color: #052a44; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">{{ $invoice->from_business_name }}</span>
                         </a>
                     </td>
