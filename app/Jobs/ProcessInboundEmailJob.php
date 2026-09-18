@@ -94,21 +94,31 @@ class ProcessInboundEmailJob implements ShouldQueue
 
     protected function extractBody(): string
     {
-        $markdown = trim((string) ($this->item['ExtractedMarkdownMessage'] ?? ''));
+        $candidates = [];
 
-        if ($markdown !== '' && ! $this->looksLikeHtml($markdown)) {
-            return html_entity_decode($markdown, ENT_QUOTES | ENT_HTML5);
+        foreach (["ExtractedMarkdownMessage", "RawTextBody"] as $key) {
+            $value = trim((string) ($this->item[$key] ?? ""));
+
+            if ($value !== "") {
+                // Some senders/Brevo hand back HTML entity-encoded, so decode
+                // before judging whether it is really markup.
+                $candidates[] = html_entity_decode($value, ENT_QUOTES | ENT_HTML5);
+            }
         }
 
-        $text = trim((string) ($this->item['RawTextBody'] ?? ''));
-
-        if ($text !== '' && ! $this->looksLikeHtml($text)) {
-            return html_entity_decode($text, ENT_QUOTES | ENT_HTML5);
+        foreach ($candidates as $candidate) {
+            if (! $this->looksLikeHtml($candidate)) {
+                return $candidate;
+            }
         }
 
-        $html = $this->item['RawHtmlBody'] ?? $markdown ?: $text;
+        $html = (string) ($this->item["RawHtmlBody"] ?? "");
 
-        return $this->htmlToPlainText((string) $html);
+        if (trim($html) === "") {
+            $html = $candidates[0] ?? "";
+        }
+
+        return $this->htmlToPlainText($html);
     }
 
     protected function looksLikeHtml(string $value): bool
