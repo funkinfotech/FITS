@@ -375,6 +375,25 @@ class InvoicePortalPageTest extends TestCase
 
         unset($userA);
     }
+
+    public function test_a_user_with_no_company_never_sees_an_invoice_with_a_null_company_id(): void
+    {
+        // Regression test: Invoice::where('company_id', $user->company_id) with a null
+        // company_id compiles to "WHERE company_id IS NULL" in SQL, not "matches nothing" —
+        // so without the explicit ternary in the controller, a no-company user would see any
+        // invoice whose company_id happened to be null too (e.g. an orphaned invoice left
+        // behind by a deleted company, since invoices.company_id is nullOnDelete()).
+        $company = Company::create(['name' => 'Acme Corp']);
+        $orphanInvoice = Invoice::create(['company_id' => $company->id]);
+        $orphanInvoice->update(['company_id' => null]);
+
+        $user = User::factory()->create(['company_id' => null]);
+
+        $this->actingAs($user)
+            ->get(route('invoices.index'))
+            ->assertOk()
+            ->assertDontSee($orphanInvoice->invoice_number);
+    }
 }
 ```
 
@@ -399,9 +418,9 @@ class InvoiceController extends Controller
     {
         $user = $request->user();
 
-        $invoices = Invoice::where('company_id', $user->company_id)
-            ->latest('issue_date')
-            ->paginate(15);
+        $invoices = $user->company_id
+            ? Invoice::where('company_id', $user->company_id)->latest('issue_date')->paginate(15)
+            : Invoice::whereRaw('1 = 0')->paginate(15);
 
         return view('invoices.index', [
             'invoices' => $invoices,

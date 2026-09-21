@@ -113,9 +113,9 @@ public function index(Request $request)
 {
     $user = $request->user();
 
-    $invoices = Invoice::where('company_id', $user->company_id) // null-safe: no rows match a null company_id
-        ->latest('issue_date')
-        ->paginate(15);
+    $invoices = $user->company_id
+        ? Invoice::where('company_id', $user->company_id)->latest('issue_date')->paginate(15)
+        : Invoice::whereRaw('1 = 0')->paginate(15);
 
     return view('invoices.index', [
         'invoices' => $invoices,
@@ -154,7 +154,7 @@ public function downloadReceipt(Invoice $invoice)
 }
 ```
 
-`Invoice::where('company_id', $user->company_id)` with a null `company_id` matches zero rows in SQL (`= NULL` is never true) — correctly produces an empty list without needing an explicit null guard, consistent with the "empty state, not an error" decision above.
+**Correction (found during implementation review):** `Invoice::where('company_id', $user->company_id)` does *not* produce an empty result for a null `company_id` — Laravel's query builder converts a two-argument `where('col', null)` call into `WHERE col IS NULL`, not an always-false comparison. Since `invoices.company_id` is nullable (`nullOnDelete()` on the company foreign key), a null-company user would actually match any invoice whose company was deleted, which is a real (if currently unreachable — no company-deletion path exists yet) cross-tenant exposure. The controller code above uses an explicit ternary instead, consistent with the "empty state, not an error" decision.
 
 ### Routes (added to the existing `auth`-middleware group in `routes/web.php`)
 
