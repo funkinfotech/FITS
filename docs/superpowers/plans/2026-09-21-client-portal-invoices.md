@@ -357,7 +357,7 @@ class InvoicePortalPageTest extends TestCase
         $this->actingAs($user)
             ->get(route('invoices.index'))
             ->assertOk()
-            ->assertSee("don't have any invoices")
+            ->assertSee('have any invoices yet')
             ->assertSee('0.00');
     }
 
@@ -411,13 +411,16 @@ class InvoiceController extends Controller
 }
 ```
 
-- [ ] **Step 4: Add the route**
+- [ ] **Step 4: Add the routes**
 
-In `routes/web.php`, add this line inside the existing `Route::middleware(['auth'])->group(function () { ... })` block, after the `attachments.show` route and before the closing `});`:
+In `routes/web.php`, add these two lines inside the existing `Route::middleware(['auth'])->group(function () { ... })` block, after the `attachments.show` route and before the closing `});`:
 
 ```php
     Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
+    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
 ```
+
+The second line is registered now even though `InvoiceController::show()` isn't written until Task 4 — the view below links every invoice row to `route('invoices.show', $invoice)`, and Laravel's `route()` helper only needs the route *name* to exist to generate a URL; it doesn't check that the controller method exists until the route is actually requested. This task's tests render the index page (which generates those URLs for each row) but never follow them, so this is safe — the same pattern used between Tasks 4 and 5 for `invoices.pdf`/`invoices.receipt`.
 
 Add the import alongside the other controller `use` statements at the top of the file:
 
@@ -594,7 +597,8 @@ Add to `tests/Feature/InvoicePortalPageTest.php` (inside the existing class), an
 - [ ] **Step 2: Run tests to verify they fail**
 
 Run: `DB_CONNECTION=sqlite DB_DATABASE=:memory: php -d memory_limit=512M vendor/bin/phpunit --filter=InvoicePortalPageTest`
-Expected: FAIL — `route('invoices.show', ...)` doesn't exist yet.
+
+Expected: FAIL — but not with a routing error this time. Task 3 already registered the `invoices.show` *route* (it had to, so the index page's row links would resolve), but `InvoiceController::show()` doesn't exist yet, so every test that requests `route('invoices.show', $invoice)` gets a fatal `Error: Call to undefined method App\Http\Controllers\InvoiceController::show()` — PHPUnit reports this as an error, not a clean assertion failure, but it's still the expected RED state: these tests fail before this step's implementation and should pass after it.
 
 - [ ] **Step 3: Add `show()` to the controller**
 
@@ -612,17 +616,16 @@ In `app/Http/Controllers/InvoiceController.php`, add this method after `index()`
     }
 ```
 
-- [ ] **Step 4: Add the routes**
+- [ ] **Step 4: Add the remaining routes**
 
-In `routes/web.php`, add these three lines in the same `auth` middleware group, directly after the `invoices.index` route from Task 3:
+`invoices.show` was already registered in Task 3 (needed there so the index page's row links would resolve) — do not re-register it, that would raise a duplicate-route-name conflict. In `routes/web.php`, add these two lines in the same `auth` middleware group, directly after the `invoices.show` route:
 
 ```php
-    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('invoices.pdf');
     Route::get('/invoices/{invoice}/receipt', [InvoiceController::class, 'downloadReceipt'])->name('invoices.receipt');
 ```
 
-The last two are registered now even though `downloadPdf`/`downloadReceipt` aren't written until Task 5 — the view below links to both (`route('invoices.pdf', ...)`, `route('invoices.receipt', ...)`), and Laravel's `route()` helper only needs the route *name* to exist to generate a URL; it doesn't check that the controller method exists until the route is actually requested. None of this task's tests request those URLs, so this is safe — Task 5 fills in the two methods behind routes that already resolve.
+These are registered now even though `downloadPdf`/`downloadReceipt` aren't written until Task 5 — the view below links to both (`route('invoices.pdf', ...)`, `route('invoices.receipt', ...)`), and Laravel's `route()` helper only needs the route *name* to exist to generate a URL; it doesn't check that the controller method exists until the route is actually requested. None of this task's tests request those URLs, so this is safe — Task 5 fills in the two methods behind routes that already resolve.
 
 - [ ] **Step 5: Write the view**
 
