@@ -38,6 +38,8 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class InvoiceResource extends Resource
 {
@@ -313,6 +315,7 @@ class InvoiceResource extends Resource
                             ->numeric()
                             ->prefix('$')
                             ->required()
+                            ->minValue(0.01)
                             ->default(fn (Invoice $record) => $record->total),
 
                         DatePicker::make('paid_date')
@@ -345,36 +348,59 @@ class InvoiceResource extends Resource
                                 ->all() ?? []),
                     ])
                     ->action(function (Invoice $record, array $data) {
-                        $numbering = PaymentNumberGenerator::next();
+                        if (Payment::where('invoice_id', $record->id)->active()->exists()) {
+                            Notification::make()
+                                ->title('This invoice already has an active payment')
+                                ->danger()
+                                ->send();
 
-                        $payment = Payment::create([
-                            'invoice_id' => $record->id,
-                            'receipt_number' => $numbering['number'],
-                            'year' => $numbering['year'],
-                            'sequence' => $numbering['sequence'],
-                            'amount' => $data['amount'],
-                            'paid_date' => $data['paid_date'],
-                            'method' => $data['method'],
-                            'reference' => $data['reference'] ?? null,
-                            'notes' => $data['notes'] ?? null,
-                            'recorded_by' => auth()->id(),
-                        ]);
-
-                        $record->update(['status' => InvoiceStatus::Paid]);
-
-                        PaymentReceiptPdfGenerator::generate($payment);
-
-                        if (filled($data['contact_ids'] ?? [])) {
-                            $contacts = Contact::with('emails')->whereIn('id', $data['contact_ids'])->get();
-                            PaymentMailer::sendReceipt($payment, $contacts);
+                            return;
                         }
 
-                        PaymentMailer::notifyAdmins($payment);
+                        $numbering = PaymentNumberGenerator::next();
 
-                        Notification::make()
-                            ->title('Payment recorded')
-                            ->success()
-                            ->send();
+                        $payment = DB::transaction(function () use ($record, $data, $numbering) {
+                            $payment = Payment::create([
+                                'invoice_id' => $record->id,
+                                'receipt_number' => $numbering['number'],
+                                'year' => $numbering['year'],
+                                'sequence' => $numbering['sequence'],
+                                'amount' => $data['amount'],
+                                'paid_date' => $data['paid_date'],
+                                'method' => $data['method'],
+                                'reference' => $data['reference'] ?? null,
+                                'notes' => $data['notes'] ?? null,
+                                'recorded_by' => auth()->id(),
+                            ]);
+
+                            $record->update(['status' => InvoiceStatus::Paid]);
+
+                            return $payment;
+                        });
+
+                        try {
+                            PaymentReceiptPdfGenerator::generate($payment);
+
+                            if (filled($data['contact_ids'] ?? [])) {
+                                $contacts = Contact::with('emails')->whereIn('id', $data['contact_ids'])->get();
+                                PaymentMailer::sendReceipt($payment, $contacts);
+                            }
+
+                            PaymentMailer::notifyAdmins($payment);
+
+                            Notification::make()
+                                ->title('Payment recorded')
+                                ->success()
+                                ->send();
+                        } catch (Throwable $e) {
+                            report($e);
+
+                            Notification::make()
+                                ->title('Payment recorded, but the receipt failed')
+                                ->body("The payment ({$payment->receipt_number}) was saved, but generating or sending the receipt failed. Please retry from the Payments list or contact support.")
+                                ->warning()
+                                ->send();
+                        }
                     }),
 
                 Action::make('send-overdue-reminder')

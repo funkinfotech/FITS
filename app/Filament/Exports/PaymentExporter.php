@@ -6,10 +6,21 @@ use App\Models\Payment;
 use Filament\Actions\Exports\ExportColumn;
 use Filament\Actions\Exports\Exporter;
 use Filament\Actions\Exports\Models\Export;
+use Illuminate\Database\Eloquent\Builder;
 
 class PaymentExporter extends Exporter
 {
     protected static ?string $model = Payment::class;
+
+    public function getFileDisk(): string
+    {
+        return 'local';
+    }
+
+    public static function modifyQuery(Builder $query): Builder
+    {
+        return $query->with('invoice.company');
+    }
 
     public static function getColumns(): array
     {

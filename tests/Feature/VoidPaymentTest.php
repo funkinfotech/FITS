@@ -87,4 +87,38 @@ class VoidPaymentTest extends TestCase
 
         Carbon::setTestNow();
     }
+
+    public function test_voiding_a_payment_on_a_voided_invoice_does_not_resurrect_it(): void
+    {
+        Carbon::setTestNow('2026-09-20');
+
+        $admin = User::factory()->create(['is_admin' => true]);
+        $this->actingAs($admin);
+
+        $invoice = $this->makePaidInvoice('2026-10-01');
+
+        $payment = Payment::create([
+            'invoice_id' => $invoice->id,
+            'receipt_number' => 'RCPT-2026-0001',
+            'year' => 2026,
+            'sequence' => 1,
+            'amount' => '150.00',
+            'paid_date' => '2026-09-20',
+            'method' => PaymentMethod::Check->value,
+        ]);
+
+        // The invoice was separately written off/voided after the payment was recorded.
+        $invoice->update(['status' => InvoiceStatus::Void]);
+
+        Livewire::test(ListPayments::class)
+            ->callTableAction('void', $payment, data: ['void_reason' => 'Correcting records']);
+
+        $payment->refresh();
+        $this->assertTrue($payment->is_voided);
+
+        $invoice->refresh();
+        $this->assertSame(InvoiceStatus::Void, $invoice->status);
+
+        Carbon::setTestNow();
+    }
 }

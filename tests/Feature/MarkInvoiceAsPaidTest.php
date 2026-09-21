@@ -91,4 +91,82 @@ class MarkInvoiceAsPaidTest extends TestCase
         Mail::assertNotQueued(PaymentReceiptMail::class);
         Mail::assertQueued(PaymentReceivedAdminNotification::class, 1);
     }
+
+    public function test_amount_must_be_at_least_a_cent(): void
+    {
+        Storage::fake('local');
+        Mail::fake();
+
+        $admin = User::factory()->create(['is_admin' => true]);
+        $this->actingAs($admin);
+
+        $company = Company::create(['name' => 'Acme Corp']);
+        $invoice = Invoice::create(['company_id' => $company->id]);
+        $invoice->lineItems()->create(['description' => 'Consulting', 'quantity' => 1, 'unit_price' => 250]);
+        $invoice->update(['status' => InvoiceStatus::Sent]);
+
+        Livewire::test(ListInvoices::class)
+            ->callTableAction('mark-as-paid', $invoice, data: [
+                'amount' => '0',
+                'paid_date' => '2026-09-20',
+                'method' => PaymentMethod::Cash->value,
+                'contact_ids' => [],
+            ])
+            ->assertHasTableActionErrors(['amount']);
+
+        $this->assertSame(0, Payment::where('invoice_id', $invoice->id)->count());
+
+        Livewire::test(ListInvoices::class)
+            ->callTableAction('mark-as-paid', $invoice, data: [
+                'amount' => '-10',
+                'paid_date' => '2026-09-20',
+                'method' => PaymentMethod::Cash->value,
+                'contact_ids' => [],
+            ])
+            ->assertHasTableActionErrors(['amount']);
+
+        $this->assertSame(0, Payment::where('invoice_id', $invoice->id)->count());
+
+        $invoice->refresh();
+        $this->assertSame(InvoiceStatus::Sent, $invoice->status);
+    }
+
+    public function test_marking_an_invoice_as_paid_twice_is_rejected_when_an_active_payment_already_exists(): void
+    {
+        Storage::fake('local');
+        Mail::fake();
+
+        $admin = User::factory()->create(['is_admin' => true]);
+        $this->actingAs($admin);
+
+        $company = Company::create(['name' => 'Acme Corp']);
+        $invoice = Invoice::create(['company_id' => $company->id]);
+        $invoice->lineItems()->create(['description' => 'Consulting', 'quantity' => 1, 'unit_price' => 250]);
+        $invoice->update(['status' => InvoiceStatus::Sent]);
+
+        Payment::create([
+            'invoice_id' => $invoice->id,
+            'receipt_number' => 'RCPT-2026-0001',
+            'year' => 2026,
+            'sequence' => 1,
+            'amount' => '250.00',
+            'paid_date' => '2026-09-19',
+            'method' => PaymentMethod::Cash->value,
+        ]);
+
+        // The invoice is still "Sent" (a stale tab / double-submit scenario), so the action
+        // remains visible even though a Payment row already exists for it — the guard inside
+        // the action closure is what must stop a second Payment from being created.
+        Livewire::test(ListInvoices::class)
+            ->callTableAction('mark-as-paid', $invoice, data: [
+                'amount' => '250.00',
+                'paid_date' => '2026-09-20',
+                'method' => PaymentMethod::Ach->value,
+                'contact_ids' => [],
+            ]);
+
+        $this->assertSame(1, Payment::where('invoice_id', $invoice->id)->count());
+        Mail::assertNotQueued(PaymentReceiptMail::class);
+        Mail::assertNotQueued(PaymentReceivedAdminNotification::class);
+    }
 }

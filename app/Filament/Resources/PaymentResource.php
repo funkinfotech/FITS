@@ -2,12 +2,12 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\InvoiceStatus;
+use App\Enums\PaymentMethod;
 use App\Filament\Exports\PaymentExporter;
 use App\Filament\Resources\PaymentResource\Pages;
 use App\Models\Company;
 use App\Models\Payment;
-use App\Enums\InvoiceStatus;
-use App\Enums\PaymentMethod;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -15,7 +15,6 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables\Actions\ExportAction;
@@ -28,6 +27,7 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
 class PaymentResource extends Resource
 {
@@ -173,17 +173,22 @@ class PaymentResource extends Resource
                             ->label('Reason (optional)'),
                     ])
                     ->action(function (Payment $record, array $data) {
-                        $record->forceFill([
-                            'voided_at' => now(),
-                            'void_reason' => $data['void_reason'] ?? null,
-                        ])->saveQuietly();
+                        DB::transaction(function () use ($record, $data) {
+                            $record->forceFill([
+                                'voided_at' => now(),
+                                'void_reason' => $data['void_reason'] ?? null,
+                            ])->saveQuietly();
 
-                        $invoice = $record->invoice;
-                        $invoice->update([
-                            'status' => $invoice->due_date->isPast()
-                                ? InvoiceStatus::Overdue
-                                : InvoiceStatus::Sent,
-                        ]);
+                            $invoice = $record->invoice;
+
+                            if ($invoice->status === InvoiceStatus::Paid) {
+                                $invoice->update([
+                                    'status' => $invoice->due_date->isPast()
+                                        ? InvoiceStatus::Overdue
+                                        : InvoiceStatus::Sent,
+                                ]);
+                            }
+                        });
 
                         Notification::make()
                             ->title('Payment voided')
