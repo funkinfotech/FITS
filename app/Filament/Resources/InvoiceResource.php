@@ -3,12 +3,17 @@
 namespace App\Filament\Resources;
 
 use App\Enums\InvoiceStatus;
+use App\Enums\PaymentMethod;
 use App\Filament\Resources\InvoiceResource\Pages;
 use App\Models\BusinessProfile;
 use App\Models\Contact;
 use App\Models\Invoice;
+use App\Models\Payment;
 use App\Support\InvoiceMailer;
 use App\Support\InvoicePdfGenerator;
+use App\Support\PaymentMailer;
+use App\Support\PaymentNumberGenerator;
+use App\Support\PaymentReceiptPdfGenerator;
 use Carbon\Carbon;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DatePicker;
@@ -302,9 +307,75 @@ class InvoiceResource extends Resource
                 Action::make('mark-as-paid')
                     ->label('Mark as Paid')
                     ->icon('heroicon-o-check-circle')
-                    ->requiresConfirmation()
                     ->visible(fn (Invoice $record): bool => in_array($record->status, [InvoiceStatus::Sent, InvoiceStatus::Overdue], true))
-                    ->action(fn (Invoice $record) => $record->update(['status' => InvoiceStatus::Paid])),
+                    ->form([
+                        TextInput::make('amount')
+                            ->numeric()
+                            ->prefix('$')
+                            ->required()
+                            ->default(fn (Invoice $record) => $record->total),
+
+                        DatePicker::make('paid_date')
+                            ->label('Date Paid')
+                            ->required()
+                            ->default(now()),
+
+                        Select::make('method')
+                            ->label('Payment Method')
+                            ->options(collect(PaymentMethod::cases())->mapWithKeys(fn ($case) => [$case->value => $case->value]))
+                            ->required(),
+
+                        TextInput::make('reference')
+                            ->label('Reference')
+                            ->placeholder('Check #, transaction ID, etc.'),
+
+                        Textarea::make('notes')
+                            ->rows(2),
+
+                        CheckboxList::make('contact_ids')
+                            ->label('Email receipt to')
+                            ->options(fn (Invoice $record): array => $record->company?->contacts
+                                ->mapWithKeys(fn ($contact) => [
+                                    $contact->id => $contact->name . ($contact->email ? " ({$contact->email})" : ' — no email on file'),
+                                ])
+                                ->all() ?? [])
+                            ->default(fn (Invoice $record): array => $record->company?->contacts
+                                ->filter(fn ($contact) => filled($contact->email))
+                                ->pluck('id')
+                                ->all() ?? []),
+                    ])
+                    ->action(function (Invoice $record, array $data) {
+                        $numbering = PaymentNumberGenerator::next();
+
+                        $payment = Payment::create([
+                            'invoice_id' => $record->id,
+                            'receipt_number' => $numbering['number'],
+                            'year' => $numbering['year'],
+                            'sequence' => $numbering['sequence'],
+                            'amount' => $data['amount'],
+                            'paid_date' => $data['paid_date'],
+                            'method' => $data['method'],
+                            'reference' => $data['reference'] ?? null,
+                            'notes' => $data['notes'] ?? null,
+                            'recorded_by' => auth()->id(),
+                        ]);
+
+                        $record->update(['status' => InvoiceStatus::Paid]);
+
+                        PaymentReceiptPdfGenerator::generate($payment);
+
+                        if (filled($data['contact_ids'] ?? [])) {
+                            $contacts = Contact::with('emails')->whereIn('id', $data['contact_ids'])->get();
+                            PaymentMailer::sendReceipt($payment, $contacts);
+                        }
+
+                        PaymentMailer::notifyAdmins($payment);
+
+                        Notification::make()
+                            ->title('Payment recorded')
+                            ->success()
+                            ->send();
+                    }),
 
                 Action::make('send-overdue-reminder')
                     ->label('Send Reminder')
