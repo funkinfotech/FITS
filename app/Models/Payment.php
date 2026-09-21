@@ -19,7 +19,6 @@ class Payment extends Model
         'reference',
         'notes',
         'recorded_by',
-        'pdf_path',
     ];
 
     protected $casts = [

@@ -37,7 +37,7 @@ class PaymentDownloadControllerTest extends TestCase
 
         $admin = User::factory()->create(['is_admin' => true]);
         $payment = $this->makePayment();
-        $payment->update(['pdf_path' => 'payments/2026/RCPT-2026-0001.pdf']);
+        $payment->forceFill(['pdf_path' => 'payments/2026/RCPT-2026-0001.pdf'])->saveQuietly();
         Storage::disk('local')->put($payment->pdf_path, 'fake-pdf-contents');
 
         $this->actingAs($admin)
