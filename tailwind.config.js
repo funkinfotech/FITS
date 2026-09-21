@@ -38,6 +38,11 @@ export default {
         'badge-status-open',
         'badge-status-inprogress',
         'badge-status-closed',
+        'badge-invoice-draft',
+        'badge-invoice-sent',
+        'badge-invoice-overdue',
+        'badge-invoice-paid',
+        'badge-invoice-void',
     ],
 
     theme: {
@@ -63,6 +68,11 @@ export default {
                 'status-open': '#0ea5e9',      // sky-500
                 'status-inprogress': '#22c55e', // green-500
                 'status-closed': '#6b7280',    // gray-500
+                'invoice-draft': '#6b7280',    // gray-500
+                'invoice-sent': '#0ea5e9',     // sky-500
+                'invoice-overdue': '#ef4444',  // red-500
+                'invoice-paid': '#22c55e',     // green-500
+                'invoice-void': '#78716c',     // stone-500
 
                 primary: {
                     DEFAULT: '#052A44',
@@ -125,6 +135,31 @@ export default {
             color: theme('colors.status-closed'),
             borderColor: theme('colors.status-closed'),
             backgroundColor: '#6b72801A',
+          },
+          '.badge-invoice-draft': {
+            color: theme('colors.invoice-draft'),
+            borderColor: theme('colors.invoice-draft'),
+            backgroundColor: '#6b72801A',
+          },
+          '.badge-invoice-sent': {
+            color: theme('colors.invoice-sent'),
+            borderColor: theme('colors.invoice-sent'),
+            backgroundColor: '#0ea5e91A',
+          },
+          '.badge-invoice-overdue': {
+            color: theme('colors.invoice-overdue'),
+            borderColor: theme('colors.invoice-overdue'),
+            backgroundColor: '#ef44441A',
+          },
+          '.badge-invoice-paid': {
+            color: theme('colors.invoice-paid'),
+            borderColor: theme('colors.invoice-paid'),
+            backgroundColor: '#22c55e1A',
+          },
+          '.badge-invoice-void': {
+            color: theme('colors.invoice-void'),
+            borderColor: theme('colors.invoice-void'),
+            backgroundColor: '#78716c1A',
           },
         });
       }),

@@ -98,6 +98,11 @@ class Invoice extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+
     /**
      * Unpaid balance still owed: Sent/Overdue count their full total,
      * everything else (Draft, Paid, Void) owes nothing.

@@ -2,9 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Enums\InvoiceStatus;
+use App\Enums\PaymentMethod;
 use App\Models\BusinessProfile;
 use App\Models\Company;
 use App\Models\Invoice;
+use App\Models\Payment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Tests\TestCase;
@@ -68,5 +71,31 @@ class InvoiceModelTest extends TestCase
         ]);
 
         $this->assertSame('30.00', $item->fresh()->amount);
+    }
+
+    public function test_payments_relation_returns_the_invoices_payments(): void
+    {
+        $company = Company::create(['name' => 'Acme Corp']);
+        $invoice = Invoice::create(['company_id' => $company->id]);
+
+        $payment = Payment::create([
+            'invoice_id' => $invoice->id,
+            'receipt_number' => 'RCPT-2026-0001',
+            'year' => 2026,
+            'sequence' => 1,
+            'amount' => '100.00',
+            'paid_date' => '2026-09-21',
+            'method' => PaymentMethod::Cash->value,
+        ]);
+
+        $this->assertTrue($invoice->payments->contains($payment));
+    }
+
+    public function test_status_color_class_returns_a_distinct_badge_for_each_status(): void
+    {
+        $classes = collect(InvoiceStatus::cases())->map(fn ($status) => $status->colorClass());
+
+        $this->assertSame($classes->count(), $classes->unique()->count());
+        $this->assertTrue($classes->every(fn ($class) => str_starts_with($class, 'badge badge-invoice-')));
     }
 }

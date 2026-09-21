@@ -20,4 +20,15 @@ enum InvoiceStatus: string
             self::Void => 'danger',
         };
     }
+
+    public function colorClass(): string
+    {
+        return match ($this) {
+            self::Draft => 'badge badge-invoice-draft',
+            self::Sent => 'badge badge-invoice-sent',
+            self::Overdue => 'badge badge-invoice-overdue',
+            self::Paid => 'badge badge-invoice-paid',
+            self::Void => 'badge badge-invoice-void',
+        };
+    }
 }
