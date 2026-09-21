@@ -5,6 +5,7 @@ use App\Http\Controllers\TicketController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\InvoiceDownloadController;
+use App\Http\Controllers\PaymentDownloadController;
 use App\Http\Middleware\EnsureUserIsAdmin;
 
 
@@ -43,6 +44,10 @@ Route::get('/tickets/{ticket}/guest-view/attachments/{attachment}', [AttachmentC
 Route::get('/admin/invoices/{invoice}/download', [InvoiceDownloadController::class, 'show'])
     ->middleware(['auth', EnsureUserIsAdmin::class])
     ->name('invoices.download');
+
+Route::get('/admin/payments/{payment}/download', [PaymentDownloadController::class, 'show'])
+    ->middleware(['auth', EnsureUserIsAdmin::class])
+    ->name('payments.download');
 
 //Route::view('/', 'welcome');
 Route::get('/', function () {
