@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Exports\PaymentExporter;
 use App\Filament\Resources\PaymentResource\Pages;
 use App\Models\Company;
 use App\Models\Payment;
@@ -16,6 +17,9 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Actions\Action;
+use Filament\Tables\Actions\BulkActionGroup;
+use Filament\Tables\Actions\ExportAction;
+use Filament\Tables\Actions\ExportBulkAction;
 use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\IconColumn;
@@ -137,6 +141,16 @@ class PaymentResource extends Resource
                     ->toggle()
                     ->default(true)
                     ->query(fn (Builder $query) => $query->whereNull('voided_at')),
+            ])
+            ->headerActions([
+                ExportAction::make()
+                    ->exporter(PaymentExporter::class),
+            ])
+            ->bulkActions([
+                BulkActionGroup::make([
+                    ExportBulkAction::make()
+                        ->exporter(PaymentExporter::class),
+                ]),
             ])
             ->actions([
                 ViewAction::make(),
