@@ -19,7 +19,6 @@ class Payment extends Model
         'reference',
         'notes',
         'recorded_by',
-        'voided_at',
     ];
 
     protected $casts = [

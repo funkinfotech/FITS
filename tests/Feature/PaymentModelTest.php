@@ -61,8 +61,8 @@ class PaymentModelTest extends TestCase
             'amount' => '100.00',
             'paid_date' => '2026-09-20',
             'method' => PaymentMethod::Cash->value,
-            'voided_at' => now(),
         ]);
+        $voided->forceFill(['voided_at' => now()])->saveQuietly();
 
         $activeIds = Payment::active()->pluck('id')->all();
 
