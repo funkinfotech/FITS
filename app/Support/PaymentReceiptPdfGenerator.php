@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\BusinessProfile;
 use App\Models\Payment;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
@@ -15,7 +16,7 @@ class PaymentReceiptPdfGenerator
         $pdf = Pdf::loadView('pdfs.payment-receipt', [
             'payment' => $payment,
             'invoice' => $payment->invoice,
-            'logoDataUri' => static::logoDataUri($payment),
+            'logoDataUri' => static::logoDataUri(),
         ]);
 
         $path = sprintf('payments/%d/%s.pdf', $payment->year, $payment->receipt_number);
@@ -29,13 +30,20 @@ class PaymentReceiptPdfGenerator
         return $path;
     }
 
-    protected static function logoDataUri(Payment $payment): ?string
+    /**
+     * A receipt is generated fresh at the moment of payment, so it uses the
+     * business's current logo — not the invoice's frozen from_logo_path
+     * snapshot (which intentionally stays fixed at whatever it was when the
+     * invoice was issued, so old invoices don't silently change if the
+     * business rebrands later).
+     */
+    public static function logoDataUri(): ?string
     {
-        $invoice = $payment->invoice;
+        $logoPath = BusinessProfile::current()->logo_path;
 
-        if ($invoice->from_logo_path && Storage::disk('public')->exists($invoice->from_logo_path)) {
-            $contents = Storage::disk('public')->get($invoice->from_logo_path);
-            $mime = Storage::disk('public')->mimeType($invoice->from_logo_path) ?: 'image/png';
+        if ($logoPath && Storage::disk('public')->exists($logoPath)) {
+            $contents = Storage::disk('public')->get($logoPath);
+            $mime = Storage::disk('public')->mimeType($logoPath) ?: 'image/png';
 
             return "data:{$mime};base64," . base64_encode($contents);
         }
