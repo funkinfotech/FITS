@@ -1679,7 +1679,7 @@ class PaymentResourceTest extends TestCase
 
         $active = $this->makePayment('Acme Corp', 'RCPT-2026-0001', 1, PaymentMethod::Check);
         $voided = $this->makePayment('Beta LLC', 'RCPT-2026-0002', 2, PaymentMethod::Cash);
-        $voided->update(['voided_at' => now()]);
+        $voided->forceFill(['voided_at' => now()])->saveQuietly();
 
         Livewire::test(ListPayments::class)
             ->assertCanSeeTableRecords([$active])
@@ -2044,10 +2044,10 @@ In `table()`, append this action inside the existing `->actions([...])` array, a
                             ->label('Reason (optional)'),
                     ])
                     ->action(function (Payment $record, array $data) {
-                        $record->update([
+                        $record->forceFill([
                             'voided_at' => now(),
                             'void_reason' => $data['void_reason'] ?? null,
-                        ]);
+                        ])->saveQuietly();
 
                         $invoice = $record->invoice;
                         $invoice->update([
