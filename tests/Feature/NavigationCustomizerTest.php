@@ -48,7 +48,7 @@ class NavigationCustomizerTest extends TestCase
         $labels = collect(PanelNavigation::visibleItems())->map->getLabel();
 
         $this->assertEqualsCanonicalizing(
-            ['Dashboard', 'Tickets', 'Invoices', 'Companies', 'Contacts', 'Portal Users', 'Company Profile'],
+            ['Dashboard', 'Tickets', 'Invoices', 'Payments', 'Companies', 'Contacts', 'Portal Users', 'Company Profile'],
             $labels->all(),
         );
     }
@@ -60,7 +60,7 @@ class NavigationCustomizerTest extends TestCase
         $labels = collect(PanelNavigation::visibleItems())->map->getLabel()->values()->all();
 
         $this->assertSame(
-            ['Dashboard', 'Tickets', 'Invoices', 'Companies', 'Contacts', 'Portal Users', 'Company Profile'],
+            ['Dashboard', 'Tickets', 'Invoices', 'Payments', 'Companies', 'Contacts', 'Portal Users', 'Company Profile'],
             $labels,
         );
     }

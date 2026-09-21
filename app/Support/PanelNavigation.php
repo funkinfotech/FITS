@@ -24,6 +24,7 @@ class PanelNavigation
         'Dashboard',
         'Tickets',
         'Invoices',
+        'Payments',
         'Companies',
         'Contacts',
         'Portal Users',
