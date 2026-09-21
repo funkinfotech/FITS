@@ -2,10 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Enums\PaymentMethod;
 use App\Models\Company;
 use App\Models\Invoice;
+use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class InvoicePortalAccessTest extends TestCase
@@ -50,5 +53,137 @@ class InvoicePortalAccessTest extends TestCase
         $invoice = Invoice::create(['company_id' => $company->id]);
 
         $this->assertFalse($user->can('view', $invoice));
+    }
+
+    public function test_user_can_download_their_own_invoice_pdf(): void
+    {
+        Storage::fake('local');
+
+        $company = Company::create(['name' => 'Acme Corp']);
+        $user = User::factory()->create(['company_id' => $company->id]);
+        $invoice = Invoice::create(['company_id' => $company->id]);
+        $invoice->forceFill(['pdf_path' => 'invoices/2026/INV-2026-0001.pdf'])->saveQuietly();
+        Storage::disk('local')->put($invoice->pdf_path, 'fake-pdf-contents');
+
+        $this->actingAs($user)
+            ->get(route('invoices.pdf', $invoice))
+            ->assertOk();
+    }
+
+    public function test_invoice_pdf_download_404s_when_no_pdf_has_been_generated(): void
+    {
+        $company = Company::create(['name' => 'Acme Corp']);
+        $user = User::factory()->create(['company_id' => $company->id]);
+        $invoice = Invoice::create(['company_id' => $company->id]);
+
+        $this->actingAs($user)
+            ->get(route('invoices.pdf', $invoice))
+            ->assertNotFound();
+    }
+
+    public function test_user_at_a_different_company_cannot_download_the_invoice_pdf(): void
+    {
+        Storage::fake('local');
+
+        $companyA = Company::create(['name' => 'Acme Corp']);
+        $companyB = Company::create(['name' => 'Other Corp']);
+        $outsider = User::factory()->create(['company_id' => $companyB->id]);
+        $invoice = Invoice::create(['company_id' => $companyA->id]);
+        $invoice->forceFill(['pdf_path' => 'invoices/2026/INV-2026-0001.pdf'])->saveQuietly();
+        Storage::disk('local')->put($invoice->pdf_path, 'fake-pdf-contents');
+
+        $this->actingAs($outsider)
+            ->get(route('invoices.pdf', $invoice))
+            ->assertForbidden();
+    }
+
+    public function test_user_can_download_the_receipt_for_a_paid_invoice(): void
+    {
+        Storage::fake('local');
+
+        $company = Company::create(['name' => 'Acme Corp']);
+        $user = User::factory()->create(['company_id' => $company->id]);
+        $invoice = Invoice::create(['company_id' => $company->id]);
+
+        $payment = Payment::create([
+            'invoice_id' => $invoice->id,
+            'receipt_number' => 'RCPT-2026-0001',
+            'year' => 2026,
+            'sequence' => 1,
+            'amount' => '100.00',
+            'paid_date' => '2026-09-21',
+            'method' => PaymentMethod::Cash->value,
+        ]);
+        $payment->forceFill(['pdf_path' => 'payments/2026/RCPT-2026-0001.pdf'])->saveQuietly();
+        Storage::disk('local')->put($payment->pdf_path, 'fake-pdf-contents');
+
+        $this->actingAs($user)
+            ->get(route('invoices.receipt', $invoice))
+            ->assertOk();
+    }
+
+    public function test_receipt_download_404s_when_the_invoice_has_no_payment(): void
+    {
+        $company = Company::create(['name' => 'Acme Corp']);
+        $user = User::factory()->create(['company_id' => $company->id]);
+        $invoice = Invoice::create(['company_id' => $company->id]);
+
+        $this->actingAs($user)
+            ->get(route('invoices.receipt', $invoice))
+            ->assertNotFound();
+    }
+
+    public function test_receipt_download_404s_when_the_only_payment_is_voided(): void
+    {
+        Storage::fake('local');
+
+        $company = Company::create(['name' => 'Acme Corp']);
+        $user = User::factory()->create(['company_id' => $company->id]);
+        $invoice = Invoice::create(['company_id' => $company->id]);
+
+        $payment = Payment::create([
+            'invoice_id' => $invoice->id,
+            'receipt_number' => 'RCPT-2026-0001',
+            'year' => 2026,
+            'sequence' => 1,
+            'amount' => '100.00',
+            'paid_date' => '2026-09-21',
+            'method' => PaymentMethod::Cash->value,
+        ]);
+        $payment->forceFill([
+            'pdf_path' => 'payments/2026/RCPT-2026-0001.pdf',
+            'voided_at' => now(),
+        ])->saveQuietly();
+        Storage::disk('local')->put($payment->pdf_path, 'fake-pdf-contents');
+
+        $this->actingAs($user)
+            ->get(route('invoices.receipt', $invoice))
+            ->assertNotFound();
+    }
+
+    public function test_user_at_a_different_company_cannot_download_the_receipt(): void
+    {
+        Storage::fake('local');
+
+        $companyA = Company::create(['name' => 'Acme Corp']);
+        $companyB = Company::create(['name' => 'Other Corp']);
+        $outsider = User::factory()->create(['company_id' => $companyB->id]);
+        $invoice = Invoice::create(['company_id' => $companyA->id]);
+
+        $payment = Payment::create([
+            'invoice_id' => $invoice->id,
+            'receipt_number' => 'RCPT-2026-0001',
+            'year' => 2026,
+            'sequence' => 1,
+            'amount' => '100.00',
+            'paid_date' => '2026-09-21',
+            'method' => PaymentMethod::Cash->value,
+        ]);
+        $payment->forceFill(['pdf_path' => 'payments/2026/RCPT-2026-0001.pdf'])->saveQuietly();
+        Storage::disk('local')->put($payment->pdf_path, 'fake-pdf-contents');
+
+        $this->actingAs($outsider)
+            ->get(route('invoices.receipt', $invoice))
+            ->assertForbidden();
     }
 }
