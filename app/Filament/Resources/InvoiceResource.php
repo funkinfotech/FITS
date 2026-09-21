@@ -310,98 +310,8 @@ class InvoiceResource extends Resource
                     ->label('Mark as Paid')
                     ->icon('heroicon-o-check-circle')
                     ->visible(fn (Invoice $record): bool => in_array($record->status, [InvoiceStatus::Sent, InvoiceStatus::Overdue], true))
-                    ->form([
-                        TextInput::make('amount')
-                            ->numeric()
-                            ->prefix('$')
-                            ->required()
-                            ->minValue(0.01)
-                            ->default(fn (Invoice $record) => $record->total),
-
-                        DatePicker::make('paid_date')
-                            ->label('Date Paid')
-                            ->required()
-                            ->default(now()),
-
-                        Select::make('method')
-                            ->label('Payment Method')
-                            ->options(collect(PaymentMethod::cases())->mapWithKeys(fn ($case) => [$case->value => $case->value]))
-                            ->required(),
-
-                        TextInput::make('reference')
-                            ->label('Reference')
-                            ->placeholder('Check #, transaction ID, etc.'),
-
-                        Textarea::make('notes')
-                            ->rows(2),
-
-                        CheckboxList::make('contact_ids')
-                            ->label('Email receipt to')
-                            ->options(fn (Invoice $record): array => $record->company?->contacts
-                                ->mapWithKeys(fn ($contact) => [
-                                    $contact->id => $contact->name . ($contact->email ? " ({$contact->email})" : ' — no email on file'),
-                                ])
-                                ->all() ?? [])
-                            ->default(fn (Invoice $record): array => $record->company?->contacts
-                                ->filter(fn ($contact) => filled($contact->email))
-                                ->pluck('id')
-                                ->all() ?? []),
-                    ])
-                    ->action(function (Invoice $record, array $data) {
-                        if (Payment::where('invoice_id', $record->id)->active()->exists()) {
-                            Notification::make()
-                                ->title('This invoice already has an active payment')
-                                ->danger()
-                                ->send();
-
-                            return;
-                        }
-
-                        $numbering = PaymentNumberGenerator::next();
-
-                        $payment = DB::transaction(function () use ($record, $data, $numbering) {
-                            $payment = Payment::create([
-                                'invoice_id' => $record->id,
-                                'receipt_number' => $numbering['number'],
-                                'year' => $numbering['year'],
-                                'sequence' => $numbering['sequence'],
-                                'amount' => $data['amount'],
-                                'paid_date' => $data['paid_date'],
-                                'method' => $data['method'],
-                                'reference' => $data['reference'] ?? null,
-                                'notes' => $data['notes'] ?? null,
-                                'recorded_by' => auth()->id(),
-                            ]);
-
-                            $record->update(['status' => InvoiceStatus::Paid]);
-
-                            return $payment;
-                        });
-
-                        try {
-                            PaymentReceiptPdfGenerator::generate($payment);
-
-                            if (filled($data['contact_ids'] ?? [])) {
-                                $contacts = Contact::with('emails')->whereIn('id', $data['contact_ids'])->get();
-                                PaymentMailer::sendReceipt($payment, $contacts);
-                            }
-
-                            PaymentMailer::notifyAdmins($payment);
-
-                            Notification::make()
-                                ->title('Payment recorded')
-                                ->success()
-                                ->send();
-                        } catch (Throwable $e) {
-                            report($e);
-
-                            Notification::make()
-                                ->title('Payment recorded, but the receipt failed')
-                                ->body("The payment ({$payment->receipt_number}) was saved, but generating or sending the receipt failed. Please retry from the Payments list or contact support.")
-                                ->warning()
-                                ->send();
-                        }
-                    }),
+                    ->form(static::markAsPaidFormSchema())
+                    ->action(fn (Invoice $record, array $data) => static::handleMarkAsPaid($record, $data)),
 
                 Action::make('send-overdue-reminder')
                     ->label('Send Reminder')
@@ -451,6 +361,116 @@ class InvoiceResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    /**
+     * Shared by the "Mark as Paid" action on both the invoices table and the
+     * View Invoice page, so the form fields stay in one place.
+     *
+     * @return array<int, \Filament\Forms\Components\Component>
+     */
+    public static function markAsPaidFormSchema(): array
+    {
+        return [
+            TextInput::make('amount')
+                ->numeric()
+                ->prefix('$')
+                ->required()
+                ->minValue(0.01)
+                ->default(fn (Invoice $record) => $record->total),
+
+            DatePicker::make('paid_date')
+                ->label('Date Paid')
+                ->required()
+                ->default(now()),
+
+            Select::make('method')
+                ->label('Payment Method')
+                ->options(collect(PaymentMethod::cases())->mapWithKeys(fn ($case) => [$case->value => $case->value]))
+                ->required(),
+
+            TextInput::make('reference')
+                ->label('Reference')
+                ->placeholder('Check #, transaction ID, etc.'),
+
+            Textarea::make('notes')
+                ->rows(2),
+
+            CheckboxList::make('contact_ids')
+                ->label('Email receipt to')
+                ->options(fn (Invoice $record): array => $record->company?->contacts
+                    ->mapWithKeys(fn ($contact) => [
+                        $contact->id => $contact->name . ($contact->email ? " ({$contact->email})" : ' — no email on file'),
+                    ])
+                    ->all() ?? [])
+                ->default(fn (Invoice $record): array => $record->company?->contacts
+                    ->filter(fn ($contact) => filled($contact->email))
+                    ->pluck('id')
+                    ->all() ?? []),
+        ];
+    }
+
+    /**
+     * Shared by the "Mark as Paid" action on both the invoices table and the
+     * View Invoice page. See markAsPaidFormSchema() for the matching form.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public static function handleMarkAsPaid(Invoice $record, array $data): void
+    {
+        if (Payment::where('invoice_id', $record->id)->active()->exists()) {
+            Notification::make()
+                ->title('This invoice already has an active payment')
+                ->danger()
+                ->send();
+
+            return;
+        }
+
+        $numbering = PaymentNumberGenerator::next();
+
+        $payment = DB::transaction(function () use ($record, $data, $numbering) {
+            $payment = Payment::create([
+                'invoice_id' => $record->id,
+                'receipt_number' => $numbering['number'],
+                'year' => $numbering['year'],
+                'sequence' => $numbering['sequence'],
+                'amount' => $data['amount'],
+                'paid_date' => $data['paid_date'],
+                'method' => $data['method'],
+                'reference' => $data['reference'] ?? null,
+                'notes' => $data['notes'] ?? null,
+                'recorded_by' => auth()->id(),
+            ]);
+
+            $record->update(['status' => InvoiceStatus::Paid]);
+
+            return $payment;
+        });
+
+        try {
+            PaymentReceiptPdfGenerator::generate($payment);
+
+            if (filled($data['contact_ids'] ?? [])) {
+                $contacts = Contact::with('emails')->whereIn('id', $data['contact_ids'])->get();
+                PaymentMailer::sendReceipt($payment, $contacts);
+            }
+
+            PaymentMailer::notifyAdmins($payment);
+
+            Notification::make()
+                ->title('Payment recorded')
+                ->success()
+                ->send();
+        } catch (Throwable $e) {
+            report($e);
+
+            Notification::make()
+                ->title('Payment recorded, but the receipt failed')
+                ->body("The payment ({$payment->receipt_number}) was saved, but generating or sending the receipt failed. Please retry from the Payments list or contact support.")
+                ->warning()
+                ->send();
+        }
     }
 
     public static function getPages(): array
