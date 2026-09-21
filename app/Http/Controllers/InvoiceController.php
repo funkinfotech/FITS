@@ -20,4 +20,14 @@ class InvoiceController extends Controller
             'balanceOwed' => $user->company?->balance_owed ?? '0.00',
         ]);
     }
+
+    public function show(Invoice $invoice)
+    {
+        $this->authorize('view', $invoice);
+
+        $invoice->load('lineItems');
+        $receipt = $invoice->payments()->active()->first();
+
+        return view('invoices.show', compact('invoice', 'receipt'));
+    }
 }

@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Enums\InvoiceStatus;
+use App\Enums\PaymentMethod;
 use App\Models\Company;
 use App\Models\Invoice;
+use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -88,5 +90,71 @@ class InvoicePortalPageTest extends TestCase
             ->get(route('invoices.index'))
             ->assertOk()
             ->assertDontSee($orphanInvoice->invoice_number);
+    }
+
+    public function test_show_page_displays_line_items_status_and_dates(): void
+    {
+        $company = Company::create(['name' => 'Acme Corp']);
+        $user = User::factory()->create(['company_id' => $company->id]);
+        $invoice = Invoice::create(['company_id' => $company->id]);
+        $invoice->lineItems()->create(['description' => 'Consulting', 'quantity' => 2, 'unit_price' => 100]);
+        $invoice->recalculateTotal()->save();
+        $invoice->update(['status' => InvoiceStatus::Sent]);
+
+        $response = $this->actingAs($user)->get(route('invoices.show', $invoice));
+
+        $response->assertOk();
+        $response->assertSee('Consulting');
+        $response->assertSee('Sent');
+        $response->assertSee('200.00');
+    }
+
+    public function test_show_page_links_to_the_receipt_when_the_invoice_is_paid(): void
+    {
+        $company = Company::create(['name' => 'Acme Corp']);
+        $user = User::factory()->create(['company_id' => $company->id]);
+        $invoice = Invoice::create(['company_id' => $company->id]);
+        $invoice->update(['status' => InvoiceStatus::Paid]);
+
+        $payment = Payment::create([
+            'invoice_id' => $invoice->id,
+            'receipt_number' => 'RCPT-2026-0001',
+            'year' => 2026,
+            'sequence' => 1,
+            'amount' => '100.00',
+            'paid_date' => '2026-09-21',
+            'method' => PaymentMethod::Cash->value,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('invoices.show', $invoice))
+            ->assertOk()
+            ->assertSee($payment->receipt_number)
+            ->assertSee('Download Receipt');
+    }
+
+    public function test_show_page_has_no_receipt_section_when_unpaid(): void
+    {
+        $company = Company::create(['name' => 'Acme Corp']);
+        $user = User::factory()->create(['company_id' => $company->id]);
+        $invoice = Invoice::create(['company_id' => $company->id]);
+        $invoice->update(['status' => InvoiceStatus::Sent]);
+
+        $this->actingAs($user)
+            ->get(route('invoices.show', $invoice))
+            ->assertOk()
+            ->assertDontSee('Download Receipt');
+    }
+
+    public function test_user_at_a_different_company_gets_403_on_show(): void
+    {
+        $companyA = Company::create(['name' => 'Acme Corp']);
+        $companyB = Company::create(['name' => 'Other Corp']);
+        $outsider = User::factory()->create(['company_id' => $companyB->id]);
+        $invoice = Invoice::create(['company_id' => $companyA->id]);
+
+        $this->actingAs($outsider)
+            ->get(route('invoices.show', $invoice))
+            ->assertForbidden();
     }
 }
