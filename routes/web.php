@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\AttachmentController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceDownloadController;
 use App\Http\Controllers\PaymentDownloadController;
 use App\Http\Middleware\EnsureUserIsAdmin;
@@ -27,6 +28,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/attachments/{attachment}', AttachmentController::class)
         ->middleware('throttle:240,1')
         ->name('attachments.show');
+
+    Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
+    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
 });
 
 Route::get('/access-denied', function () {
