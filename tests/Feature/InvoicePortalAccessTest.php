@@ -55,6 +55,21 @@ class InvoicePortalAccessTest extends TestCase
         $this->assertFalse($user->can('view', $invoice));
     }
 
+    public function test_an_admin_can_view_any_invoice_regardless_of_company(): void
+    {
+        // Regression test: this policy is auto-discovered globally by Laravel, not scoped
+        // to the portal — Filament's admin InvoiceResource has no custom canView() override,
+        // so it defers to this same policy for its own authorization. Admin users are staff,
+        // not tied to any one client company (company_id is null), so without this bypass
+        // every admin would be locked out of every invoice in the admin panel too, matching
+        // the equivalent bypass already established in TicketPolicy::view().
+        $company = Company::create(['name' => 'Acme Corp']);
+        $admin = User::factory()->create(['is_admin' => true, 'company_id' => null]);
+        $invoice = Invoice::create(['company_id' => $company->id]);
+
+        $this->assertTrue($admin->can('view', $invoice));
+    }
+
     public function test_user_can_download_their_own_invoice_pdf(): void
     {
         Storage::fake('local');

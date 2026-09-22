@@ -9,6 +9,7 @@ class InvoicePolicy
 {
     public function view(User $user, Invoice $invoice): bool
     {
-        return $user->company_id !== null && $invoice->company_id === $user->company_id;
+        return $user->is_admin
+            || ($user->company_id !== null && $invoice->company_id === $user->company_id);
     }
 }

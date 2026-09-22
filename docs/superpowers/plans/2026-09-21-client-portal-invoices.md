@@ -246,6 +246,19 @@ class InvoicePortalAccessTest extends TestCase
 
         $this->assertFalse($user->can('view', $invoice));
     }
+
+    public function test_an_admin_can_view_any_invoice_regardless_of_company(): void
+    {
+        // This policy is auto-discovered globally, not scoped to the portal — Filament's
+        // admin InvoiceResource has no custom canView() override, so it defers to this same
+        // policy. Admin users have no company_id, so without this bypass every admin would
+        // be locked out of every invoice in the admin panel too.
+        $company = Company::create(['name' => 'Acme Corp']);
+        $admin = User::factory()->create(['is_admin' => true, 'company_id' => null]);
+        $invoice = Invoice::create(['company_id' => $company->id]);
+
+        $this->assertTrue($admin->can('view', $invoice));
+    }
 }
 ```
 
@@ -268,15 +281,18 @@ class InvoicePolicy
 {
     public function view(User $user, Invoice $invoice): bool
     {
-        return $user->company_id !== null && $invoice->company_id === $user->company_id;
+        return $user->is_admin
+            || ($user->company_id !== null && $invoice->company_id === $user->company_id);
     }
 }
 ```
 
+**Correction (found while running Task 5's full-suite regression check):** this policy is auto-discovered globally by Laravel — it is not scoped to the portal. Filament's admin `InvoiceResource` has no custom `canView()`/authorization override, so it defers to this same policy for its own access checks. Admin users are staff, not tied to any one client company (`company_id` is null for them), so without the `$user->is_admin ||` bypass, every admin would be locked out of every invoice in the admin panel — this broke `MarkInvoiceAsPaidFromViewPageTest` (an *admin*-side test, unrelated to this plan on its face) the moment this policy was auto-discovered. The bypass exactly mirrors the one already established in `TicketPolicy::view()` (`$user->is_admin || $this->belongsToTicket(...)`), which this policy should have matched from the start.
+
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `DB_CONNECTION=sqlite DB_DATABASE=:memory: php -d memory_limit=512M vendor/bin/phpunit --filter=InvoicePortalAccessTest`
-Expected: PASS (4 tests).
+Expected: PASS (5 tests).
 
 - [ ] **Step 5: Commit**
 

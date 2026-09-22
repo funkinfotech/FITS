@@ -77,7 +77,7 @@ public function colorClass(): string
 
 ### `InvoicePolicy` (new)
 
-Mirrors `TicketPolicy` (`app/Policies/TicketPolicy.php`), but simpler — `Invoice` has no `user_id`, only `company_id`, so there's no "owns it directly" branch to check:
+Mirrors `TicketPolicy` (`app/Policies/TicketPolicy.php`) in structure — `Invoice` has no `user_id`, only `company_id`, so there's no "owns it directly" branch to check — but must keep the *same admin bypass* `TicketPolicy` has, for a reason worth stating explicitly: this policy is auto-discovered globally by Laravel, not scoped to the portal, and Filament's admin `InvoiceResource` has no custom `canView()` override, so the admin panel's own invoice authorization defers to this same policy. Admin users don't belong to a client company (`company_id` is null for them), so without an explicit `is_admin` bypass, this policy would lock every admin out of every invoice in the admin panel the moment it's auto-discovered — exactly what `TicketPolicy::view()`'s `$user->is_admin || ...` already guards against for tickets.
 
 ```php
 <?php
@@ -91,7 +91,8 @@ class InvoicePolicy
 {
     public function view(User $user, Invoice $invoice): bool
     {
-        return $user->company_id !== null && $invoice->company_id === $user->company_id;
+        return $user->is_admin
+            || ($user->company_id !== null && $invoice->company_id === $user->company_id);
     }
 }
 ```
