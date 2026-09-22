@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\InvoiceStatus;
 use App\Models\Invoice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -13,7 +14,11 @@ class InvoiceController extends Controller
         $user = $request->user();
 
         $invoices = $user->company_id
-            ? Invoice::where('company_id', $user->company_id)->latest('issue_date')->paginate(15)
+            ? Invoice::where('company_id', $user->company_id)
+                ->where('status', '!=', InvoiceStatus::Draft)
+                ->latest('issue_date')
+                ->orderByDesc('id')
+                ->paginate(15)
             : Invoice::whereRaw('1 = 0')->paginate(15);
 
         return view('invoices.index', [

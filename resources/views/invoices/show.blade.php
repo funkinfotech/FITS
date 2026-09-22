@@ -11,7 +11,7 @@
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
                 <p class="text-sm text-gray-500">Invoice #{{ $invoice->invoice_number }}</p>
-                <h1 class="text-2xl font-bold text-gray-900">{{ $invoice->from_business_name }}</h1>
+                <h1 class="text-2xl font-bold text-gray-900">{{ $invoice->invoice_number }}</h1>
                 <p class="mt-1 text-xs text-gray-400">
                     Issued {{ $invoice->issue_date?->format('M j, Y') }} &middot; Due {{ $invoice->due_date?->format('M j, Y') }}
                 </p>
@@ -47,12 +47,14 @@
             </tbody>
         </table>
 
-        <div class="mt-6 flex flex-wrap gap-3">
-            <a href="{{ route('invoices.pdf', $invoice) }}"
-               class="inline-block px-5 py-3 bg-primary text-white font-semibold rounded shadow hover:bg-opacity-90">
-                Download PDF
-            </a>
-        </div>
+        @if ($invoice->pdf_path)
+            <div class="mt-6 flex flex-wrap gap-3">
+                <a href="{{ route('invoices.pdf', $invoice) }}"
+                   class="inline-block px-5 py-3 bg-primary text-white font-semibold rounded shadow hover:bg-opacity-90">
+                    Download PDF
+                </a>
+            </div>
+        @endif
 
         @if ($receipt)
             <div class="mt-6 border-t pt-6">

@@ -15,7 +15,7 @@
         <div class="bg-white shadow rounded divide-y">
             @foreach ($invoices as $invoice)
                 <a href="{{ route('invoices.show', $invoice) }}" wire:navigate class="block hover:bg-gray-50 transition rounded-md">
-                    <div class="p-4 border-b">
+                    <div class="p-4">
                         <div class="flex justify-between items-center gap-3">
                             <div class="min-w-0">
                                 <h2 class="text-lg font-semibold text-gray-900">

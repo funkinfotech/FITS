@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\InvoiceStatus;
 use App\Enums\PaymentMethod;
 use App\Models\Company;
 use App\Models\Invoice;
@@ -20,6 +21,7 @@ class InvoicePortalAccessTest extends TestCase
         $company = Company::create(['name' => 'Acme Corp']);
         $user = User::factory()->create(['company_id' => $company->id]);
         $invoice = Invoice::create(['company_id' => $company->id]);
+        $invoice->update(['status' => InvoiceStatus::Sent]);
 
         $this->assertTrue($user->can('view', $invoice));
     }
@@ -27,11 +29,9 @@ class InvoicePortalAccessTest extends TestCase
     public function test_coworker_at_the_same_company_can_view_the_invoice(): void
     {
         $company = Company::create(['name' => 'Acme Corp']);
-        $someoneElse = User::factory()->create(['company_id' => $company->id]);
         $coworker = User::factory()->create(['company_id' => $company->id]);
         $invoice = Invoice::create(['company_id' => $company->id]);
-
-        unset($someoneElse);
+        $invoice->update(['status' => InvoiceStatus::Sent]);
 
         $this->assertTrue($coworker->can('view', $invoice));
     }
@@ -77,6 +77,7 @@ class InvoicePortalAccessTest extends TestCase
         $company = Company::create(['name' => 'Acme Corp']);
         $user = User::factory()->create(['company_id' => $company->id]);
         $invoice = Invoice::create(['company_id' => $company->id]);
+        $invoice->update(['status' => InvoiceStatus::Sent]);
         $invoice->forceFill(['pdf_path' => 'invoices/2026/INV-2026-0001.pdf'])->saveQuietly();
         Storage::disk('local')->put($invoice->pdf_path, 'fake-pdf-contents');
 
@@ -90,6 +91,7 @@ class InvoicePortalAccessTest extends TestCase
         $company = Company::create(['name' => 'Acme Corp']);
         $user = User::factory()->create(['company_id' => $company->id]);
         $invoice = Invoice::create(['company_id' => $company->id]);
+        $invoice->update(['status' => InvoiceStatus::Sent]);
 
         $this->actingAs($user)
             ->get(route('invoices.pdf', $invoice))
@@ -119,6 +121,7 @@ class InvoicePortalAccessTest extends TestCase
         $company = Company::create(['name' => 'Acme Corp']);
         $user = User::factory()->create(['company_id' => $company->id]);
         $invoice = Invoice::create(['company_id' => $company->id]);
+        $invoice->update(['status' => InvoiceStatus::Paid]);
 
         $payment = Payment::create([
             'invoice_id' => $invoice->id,
@@ -142,6 +145,7 @@ class InvoicePortalAccessTest extends TestCase
         $company = Company::create(['name' => 'Acme Corp']);
         $user = User::factory()->create(['company_id' => $company->id]);
         $invoice = Invoice::create(['company_id' => $company->id]);
+        $invoice->update(['status' => InvoiceStatus::Sent]);
 
         $this->actingAs($user)
             ->get(route('invoices.receipt', $invoice))
@@ -155,6 +159,7 @@ class InvoicePortalAccessTest extends TestCase
         $company = Company::create(['name' => 'Acme Corp']);
         $user = User::factory()->create(['company_id' => $company->id]);
         $invoice = Invoice::create(['company_id' => $company->id]);
+        $invoice->update(['status' => InvoiceStatus::Paid]);
 
         $payment = Payment::create([
             'invoice_id' => $invoice->id,
@@ -174,6 +179,98 @@ class InvoicePortalAccessTest extends TestCase
         $this->actingAs($user)
             ->get(route('invoices.receipt', $invoice))
             ->assertNotFound();
+    }
+
+    public function test_a_company_user_cannot_view_a_draft_invoice_in_their_own_company(): void
+    {
+        $company = Company::create(['name' => 'Acme Corp']);
+        $user = User::factory()->create(['company_id' => $company->id]);
+        $invoice = Invoice::create(['company_id' => $company->id]);
+        $invoice->update(['status' => InvoiceStatus::Draft]);
+
+        $this->assertFalse($user->can('view', $invoice));
+    }
+
+    public function test_an_admin_can_still_view_a_draft_invoice(): void
+    {
+        // Regression guard: the admin bypass in InvoicePolicy::view() must stay
+        // unconditional. Filament's admin InvoiceResource defers to this policy,
+        // so a status check applied to the admin branch would lock admins out of
+        // draft invoices in the admin panel.
+        $company = Company::create(['name' => 'Acme Corp']);
+        $admin = User::factory()->create(['is_admin' => true, 'company_id' => null]);
+        $invoice = Invoice::create(['company_id' => $company->id]);
+        $invoice->update(['status' => InvoiceStatus::Draft]);
+
+        $this->assertTrue($admin->can('view', $invoice));
+    }
+
+    public function test_a_company_user_gets_403_visiting_the_show_page_for_a_draft_invoice(): void
+    {
+        $company = Company::create(['name' => 'Acme Corp']);
+        $user = User::factory()->create(['company_id' => $company->id]);
+        $invoice = Invoice::create(['company_id' => $company->id]);
+        $invoice->update(['status' => InvoiceStatus::Draft]);
+
+        $this->actingAs($user)
+            ->get(route('invoices.show', $invoice))
+            ->assertForbidden();
+    }
+
+    public function test_a_company_user_gets_403_downloading_the_pdf_for_a_draft_invoice(): void
+    {
+        Storage::fake('local');
+
+        $company = Company::create(['name' => 'Acme Corp']);
+        $user = User::factory()->create(['company_id' => $company->id]);
+        $invoice = Invoice::create(['company_id' => $company->id]);
+        $invoice->update(['status' => InvoiceStatus::Draft]);
+        $invoice->forceFill(['pdf_path' => 'invoices/2026/INV-2026-0001.pdf'])->saveQuietly();
+        Storage::disk('local')->put($invoice->pdf_path, 'fake-pdf-contents');
+
+        $this->actingAs($user)
+            ->get(route('invoices.pdf', $invoice))
+            ->assertForbidden();
+    }
+
+    public function test_a_company_user_gets_403_downloading_the_receipt_for_a_draft_invoice(): void
+    {
+        Storage::fake('local');
+
+        $company = Company::create(['name' => 'Acme Corp']);
+        $user = User::factory()->create(['company_id' => $company->id]);
+        $invoice = Invoice::create(['company_id' => $company->id]);
+        $invoice->update(['status' => InvoiceStatus::Draft]);
+
+        $payment = Payment::create([
+            'invoice_id' => $invoice->id,
+            'receipt_number' => 'RCPT-2026-0001',
+            'year' => 2026,
+            'sequence' => 1,
+            'amount' => '100.00',
+            'paid_date' => '2026-09-21',
+            'method' => PaymentMethod::Cash->value,
+        ]);
+        $payment->forceFill(['pdf_path' => 'payments/2026/RCPT-2026-0001.pdf'])->saveQuietly();
+        Storage::disk('local')->put($payment->pdf_path, 'fake-pdf-contents');
+
+        $this->actingAs($user)
+            ->get(route('invoices.receipt', $invoice))
+            ->assertForbidden();
+    }
+
+    public function test_a_company_user_can_still_view_a_void_invoice_in_their_own_company(): void
+    {
+        $company = Company::create(['name' => 'Acme Corp']);
+        $user = User::factory()->create(['company_id' => $company->id]);
+        $invoice = Invoice::create(['company_id' => $company->id]);
+        $invoice->update(['status' => InvoiceStatus::Void]);
+
+        $this->assertTrue($user->can('view', $invoice));
+
+        $this->actingAs($user)
+            ->get(route('invoices.show', $invoice))
+            ->assertOk();
     }
 
     public function test_user_at_a_different_company_cannot_download_the_receipt(): void

@@ -22,7 +22,9 @@ class InvoicePortalPageTest extends TestCase
         $user = User::factory()->create(['company_id' => $companyA->id]);
 
         $ownInvoice = Invoice::create(['company_id' => $companyA->id]);
+        $ownInvoice->update(['status' => InvoiceStatus::Sent]);
         $otherInvoice = Invoice::create(['company_id' => $companyB->id]);
+        $otherInvoice->update(['status' => InvoiceStatus::Sent]);
 
         $response = $this->actingAs($user)->get(route('invoices.index'));
 
@@ -44,7 +46,39 @@ class InvoicePortalPageTest extends TestCase
         $this->actingAs($user)
             ->get(route('invoices.index'))
             ->assertOk()
-            ->assertSee('250.00');
+            ->assertSeeInOrder(['Total balance due', '$250.00']);
+    }
+
+    public function test_index_does_not_list_a_draft_invoice_in_the_users_own_company(): void
+    {
+        $company = Company::create(['name' => 'Acme Corp']);
+        $user = User::factory()->create(['company_id' => $company->id]);
+
+        $draftInvoice = Invoice::create(['company_id' => $company->id]);
+        $draftInvoice->update(['status' => InvoiceStatus::Draft]);
+
+        $sentInvoice = Invoice::create(['company_id' => $company->id]);
+        $sentInvoice->update(['status' => InvoiceStatus::Sent]);
+
+        $response = $this->actingAs($user)->get(route('invoices.index'));
+
+        $response->assertOk();
+        $response->assertDontSee($draftInvoice->invoice_number);
+        $response->assertSee($sentInvoice->invoice_number);
+    }
+
+    public function test_index_still_lists_a_void_invoice_in_the_users_own_company(): void
+    {
+        $company = Company::create(['name' => 'Acme Corp']);
+        $user = User::factory()->create(['company_id' => $company->id]);
+
+        $voidInvoice = Invoice::create(['company_id' => $company->id]);
+        $voidInvoice->update(['status' => InvoiceStatus::Void]);
+
+        $response = $this->actingAs($user)->get(route('invoices.index'));
+
+        $response->assertOk();
+        $response->assertSee($voidInvoice->invoice_number);
     }
 
     public function test_index_shows_an_empty_state_for_a_user_with_no_company(): void
@@ -64,6 +98,7 @@ class InvoicePortalPageTest extends TestCase
         $userA = User::factory()->create(['company_id' => $company->id]);
         $userB = User::factory()->create(['company_id' => $company->id]);
         $invoice = Invoice::create(['company_id' => $company->id]);
+        $invoice->update(['status' => InvoiceStatus::Sent]);
 
         $this->actingAs($userB)
             ->get(route('invoices.index'))
@@ -156,5 +191,60 @@ class InvoicePortalPageTest extends TestCase
         $this->actingAs($outsider)
             ->get(route('invoices.show', $invoice))
             ->assertForbidden();
+    }
+
+    public function test_show_page_hides_the_download_pdf_button_when_no_pdf_exists(): void
+    {
+        $company = Company::create(['name' => 'Acme Corp']);
+        $user = User::factory()->create(['company_id' => $company->id]);
+        $invoice = Invoice::create(['company_id' => $company->id]);
+        $invoice->update(['status' => InvoiceStatus::Sent]);
+
+        $this->actingAs($user)
+            ->get(route('invoices.show', $invoice))
+            ->assertOk()
+            ->assertDontSee('Download PDF');
+    }
+
+    public function test_show_page_shows_the_download_pdf_button_when_a_pdf_exists(): void
+    {
+        $company = Company::create(['name' => 'Acme Corp']);
+        $user = User::factory()->create(['company_id' => $company->id]);
+        $invoice = Invoice::create(['company_id' => $company->id]);
+        $invoice->update(['status' => InvoiceStatus::Sent]);
+        $invoice->forceFill(['pdf_path' => 'invoices/2026/INV-2026-0001.pdf'])->saveQuietly();
+
+        $this->actingAs($user)
+            ->get(route('invoices.show', $invoice))
+            ->assertOk()
+            ->assertSee('Download PDF');
+    }
+
+    public function test_index_pagination_has_a_stable_secondary_sort_when_issue_dates_tie(): void
+    {
+        $company = Company::create(['name' => 'Acme Corp']);
+        $user = User::factory()->create(['company_id' => $company->id]);
+
+        $invoices = collect(range(1, 20))->map(function () use ($company) {
+            $invoice = Invoice::create(['company_id' => $company->id, 'issue_date' => '2026-01-01']);
+            $invoice->update(['status' => InvoiceStatus::Sent]);
+
+            return $invoice;
+        });
+
+        $page1 = $this->actingAs($user)->get(route('invoices.index', ['page' => 1]));
+        $page2 = $this->actingAs($user)->get(route('invoices.index', ['page' => 2]));
+
+        $page1Numbers = collect($page1->viewData('invoices')->items())->pluck('invoice_number');
+        $page2Numbers = collect($page2->viewData('invoices')->items())->pluck('invoice_number');
+
+        // Every invoice should appear on exactly one page - no duplicates, none skipped.
+        $this->assertCount(15, $page1Numbers->unique());
+        $this->assertCount(5, $page2Numbers->unique());
+        $this->assertEmpty($page1Numbers->intersect($page2Numbers));
+        $this->assertEqualsCanonicalizing(
+            $invoices->pluck('invoice_number')->all(),
+            $page1Numbers->merge($page2Numbers)->all()
+        );
     }
 }
